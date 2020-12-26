@@ -1,0 +1,83 @@
+:root {
+    box-sizing: border-box;
+    font-family: monospace;
+    font-size: 10pt;
+}
+
+.tower {
+    border: 1ch solid black;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 1ch;
+    width: 125ch;
+}
+
+.floor {
+    border: 1ch solid blue;
+    padding: 1ch;
+}
+
+.floor-basic {
+    border: 1ch solid red;
+    padding: 1ch;
+    display: flex;
+    flex-direction: row;
+}
+
+.floor-illustration {
+    border: 1ch solid black;
+    padding: 1ch;
+    width: 54ch;
+    height: 20ch;
+    margin-right: 1ch;
+
+    background: white;
+}
+
+.floor-stats {
+    border: 1ch solid black;
+    padding: 1ch;
+    width: 54ch;
+    height: 20ch;
+}
+
+.floor-detail {
+    /*opacity: 0;*/
+
+    color: green;
+    background-color: green;
+
+    margin-top: 0;
+    padding: 0;
+    font-size: 0;
+    border: 0 solid green;
+
+    transition:
+    opacity .5s,
+    color .5s,
+    background-color .5s,
+    font-size .5s .5s,
+    margin-top .5s .5s,
+    padding .5s .5s,
+    border-width .5s .5s;
+}
+
+.floor-detail.visible {
+    color: black;
+    background-color: white;
+
+    /*opacity: 1;*/
+    border: 1ch solid green;
+    padding: 1ch;
+    margin-top: 1ch;
+    font-size: 10pt;
+
+    transition:
+    font-size .5s,
+    margin-top .5s,
+    padding .5s,
+    border-width .5s,
+    opacity .5s .5s,
+    color .5s .5s,
+    background-color .5s .5s;
+}
