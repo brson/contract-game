@@ -1,3 +1,5 @@
+"use strict";
+
 function onLoad() {
     installEventHandlers();
 }
@@ -5,8 +7,7 @@ function onLoad() {
 function installEventHandlers() {
     let basicFloors = document.querySelectorAll(".floor-basic");
 
-    for (basicFloor of basicFloors) {
-        console.log(basicFloor);
+    for (let basicFloor of basicFloors) {
         basicFloor.addEventListener("click", onClickBasicFloor);
     }
 }
@@ -19,6 +20,26 @@ function onClickBasicFloor(event) {
     console.assert(detailElt.classList.contains("floor-detail"));
 
     detailElt.classList.toggle("visible");
+
+    let floorElt = targetElt.parentNode;
+
+    console.assert(floorElt);
+    console.assert(floorElt.classList.contains("floor"));
+
+    let towerElt = floorElt.parentNode;
+
+    console.assert(towerElt);
+    console.assert(towerElt.classList.contains("tower"));
+
+    towerElt.classList.toggle("collapsed");
+
+    console.log(towerElt.children);
+
+    for (let floorElt of towerElt.children) {
+        floorElt.classList.remove("top-stacked-floor");
+    }
+
+    floorElt.classList.add("top-stacked-floor");
 }
 
 if (document.readyState == "loading") {

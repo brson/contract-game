@@ -25,6 +25,7 @@
 }
 
 .floor-illustration {
+    /*display: block-inline;*/
     border: 1ch solid black;
     padding: 1ch;
     width: 54ch;
@@ -35,6 +36,7 @@
 }
 
 .floor-stats {
+    /*display: block-inline;*/
     border: 1ch solid black;
     padding: 1ch;
     width: 54ch;
@@ -42,42 +44,47 @@
 }
 
 .floor-detail {
-    /*opacity: 0;*/
-
-    color: green;
-    background-color: green;
-
-    margin-top: 0;
-    padding: 0;
-    font-size: 0;
-    border: 0 solid green;
-
-    transition:
-    opacity .5s,
-    color .5s,
-    background-color .5s,
-    font-size .5s .5s,
-    margin-top .5s .5s,
-    padding .5s .5s,
-    border-width .5s .5s;
-}
-
-.floor-detail.visible {
     color: black;
     background-color: white;
 
-    /*opacity: 1;*/
     border: 1ch solid green;
     padding: 1ch;
     margin-top: 1ch;
-    font-size: 10pt;
+}
 
-    transition:
-    font-size .5s,
-    margin-top .5s,
-    padding .5s,
-    border-width .5s,
-    opacity .5s .5s,
-    color .5s .5s,
-    background-color .5s .5s;
+.floor-detail.invisible {
+    display: none;
+}
+
+.floor {
+    margin-bottom: 1ch;
+}
+
+.floor:last-child {
+    margin-bottom: 0;
+}
+
+* {
+    background-color: white;
+}
+
+.tower {
+    display: flex;
+    flex-direction: column;
+}
+
+.tower .floor {
+    transition: margin-top 1s ease;
+}
+
+.tower.collapsed .floor:first-child {
+    margin-top: 0;
+}
+
+.tower.collapsed .floor {
+    margin-top: -33ch;
+}
+
+.floor.top-stacked-floor {
+    z-index: 1;
 }
