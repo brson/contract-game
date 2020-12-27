@@ -9,7 +9,11 @@ mod game {
 
     }
 
-    pub struct Account;
+    #[derive(Debug, scale::Encode)]
+    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))] // todo: what is this?
+    pub struct Account {
+	level: u32,
+    }
     
     impl Game {
         #[ink(constructor)]
@@ -40,7 +44,7 @@ mod game {
 	///
 	/// - The account doesn't exist.
 	#[ink(message)]
-	pub fn get_account(&self) -> Result<(), ()> {
+	pub fn get_account(&self) -> Result<Account, ()> {
 	    panic!()
 	}
     }
