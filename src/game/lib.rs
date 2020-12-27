@@ -9,16 +9,40 @@ mod game {
 
     }
 
+    pub struct Account;
+    
     impl Game {
         #[ink(constructor)]
         pub fn default() -> Self {
 	    Game {}
         }
 
-        #[ink(message)]
-        pub fn flip(&mut self) {
+	/// Query if the caller has an account
+	#[ink(message)]
+	pub fn have_account(&self) -> bool {
 	    panic!()
-        }
+	}
+
+	/// Create an account for the caller
+	///
+	/// # Errors
+	///
+	/// - The account exists.
+	/// - The paid amount is insufficient.
+	#[ink(message, payable)]
+	pub fn create_account(&mut self) -> Result<(), ()> {
+	    panic!()
+	}
+
+	/// Retrieve caller's account information
+	///
+	/// # Errors
+	///
+	/// - The account doesn't exist.
+	#[ink(message)]
+	pub fn get_account(&self) -> Result<(), ()> {
+	    panic!()
+	}
     }
 
     #[cfg(test)]
