@@ -51,6 +51,30 @@ mod game {
 	pub fn get_game_account(&self) -> Result<GameAccount, Error> {
 	    panic!()
 	}
+
+	/// Submit a program for a level puzzle
+	///
+	/// # Errors
+	///
+	/// - Level is greater than caller's current level.
+	/// - Program fails verification.
+	/// - Program account doesn't exist.
+	#[ink(message, payable)]
+	pub fn submit_level(&mut self, level: u32, program_id: AccountId) -> Result<(), Error> {
+	    panic!()
+	}
+
+	/// Run a level
+	///
+	/// # Errors
+	///
+	/// - Level is greater than caller's current level.
+	/// - Caller has no submiss for this level.
+	/// - Submitted program doesn't implement required contracts.
+	#[ink(message, payable)]
+	pub fn run_level(&mut self, level: u32) -> Result<(), Error> {
+	    panic!()
+	}
     }
 
     #[cfg(test)]
