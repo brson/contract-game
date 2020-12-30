@@ -1,18 +1,23 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use ink_lang as ink;
-
+    
 #[ink::contract]
 mod game {
+    use ink_storage::collections::HashMap;
+
     #[ink(storage)]
     pub struct Game {
-
+	game_accounts: HashMap<AccountId, GameAccount>,
     }
 
-    #[derive(Debug, scale::Encode)]
+    #[derive(Debug, scale::Encode, scale::Decode, ink_storage_derive::PackedLayout, ink_storage_derive::SpreadLayout)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))] // todo: what is this?
     pub struct GameAccount {
+	game_account_id: [u32; 8],
 	level: u32,
+	// todo: other data for a captain
+	// e.g.: NFT pet, Erc20 gold in game
     }
 
     #[derive(Debug, scale::Encode)]
@@ -22,7 +27,9 @@ mod game {
     impl Game {
         #[ink(constructor)]
         pub fn default() -> Self {
-	    Game {}
+	    Game {
+		game_accounts: HashMap::new(),
+	    }
         }
 
 	/// Query if the caller has an account
