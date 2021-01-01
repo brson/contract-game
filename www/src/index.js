@@ -1,6 +1,7 @@
 "use strict";
 
-import _ from "./node_modules/@polkadot/api";
+import { ApiPromise } from "@polkadot/api";
+
 
 let gameController = null;
 
