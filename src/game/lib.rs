@@ -1,30 +1,43 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate alloc;
 use ink_lang as ink;
 
 #[ink::contract]
 mod game {
     #[cfg(not(feature = "ink-as-dependency"))]
     use ink_storage::collections::HashMap;
+    use alloc::collections::BTreeMap;
     
     #[ink(storage)]
     pub struct Game {
 	game_accounts: HashMap<AccountId, GameAccount>,
     }
 
-    #[derive(Debug, scale::Encode, scale::Decode, ink_storage_derive::PackedLayout, ink_storage_derive::SpreadLayout)]
+    #[derive(Debug, Clone, scale::Encode, scale::Decode, ink_storage_derive::PackedLayout, ink_storage_derive::SpreadLayout)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))] // todo: what is this?
     pub struct GameAccount {
-	game_account_id: [u32; 8],
 	level: u32,
+	level_programs: BTreeMap<u32, AccountId>,
 	// todo: other data for a captain
 	// e.g.: NFT pet, Erc20 gold in game
     }
 
+    impl GameAccount {
+	pub fn default() -> Self {
+	    GameAccount {
+		level: 0,
+		level_programs: BTreeMap::new(),
+	    }
+	}
+    }
+    
     #[derive(Debug, scale::Encode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))] // todo: what is this?
     pub enum Error {
-	InsufficiantBalance,	
+	InsufficiantBalance,
+	AccountExists,
+	AccountNotExists,
     }
 
     // Contract methods
@@ -38,8 +51,8 @@ mod game {
 
 	/// Query if the caller has an account
 	#[ink(message)]
-	pub fn have_game_account(&self) -> bool {
-	    panic!()
+	pub fn have_game_account(&self, account: AccountId) -> bool {
+	    self.game_accounts.contains_key(&account)
 	}
 
 	/// Create an account for the caller
@@ -58,6 +71,8 @@ mod game {
 	    if balance < 1000 {
 		ink_env::debug_println("Your balance isn't enough for creating your captain");
 		Err(Error::InsufficiantBalance)
+	    } else if self.have_game_account(caller) {
+		Err(Error::AccountExists)
 	    } else {
 		self.create_a_captain(caller)
 	    }		
@@ -69,8 +84,8 @@ mod game {
 	///
 	/// - The account doesn't exist.
 	#[ink(message)]
-	pub fn get_game_account(&self) -> Result<GameAccount, Error> {
-	    panic!()
+	pub fn get_game_account(&self, account: AccountId) -> Result<GameAccount, Error> {
+	    self.game_accounts.get(&account).cloned().ok_or(Error::AccountNotExists)
 	}
 
 	/// Submit a program for a level puzzle
@@ -82,6 +97,11 @@ mod game {
 	/// - Program account doesn't exist.
 	#[ink(message, payable)]
 	pub fn submit_level(&mut self, level: u32, program_id: AccountId) -> Result<(), Error> {
+	    // get caller's game_account
+	    // return an error if the caller doesn't have a game_account
+	    // return an error if the submitted level is greater than current level
+	    // insert program_id (AccountId) into the level_programs HashMap
+	    
 	    panic!()
 	}
 
@@ -101,18 +121,16 @@ mod game {
     // Methos support contracts
     impl Game {
 	fn create_a_captain(&mut self, account: AccountId) -> Result<GameAccount, Error> {
-	    // return an error if account/address is exists in the hashmap
-	    // create new captain_account
-	    // insert into the hashmap
-	    
-	    panic!()
+	    let new_game_account = GameAccount::default();
+
+	    self.game_accounts.insert(account, new_game_account.clone());
+	    Ok(new_game_account)
 	}
     }
     
     #[cfg(test)]
     mod tests {
         use super::*;
-
     }
 }
 
