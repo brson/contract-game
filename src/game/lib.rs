@@ -1,11 +1,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate alloc;
 use ink_lang as ink;
 
 #[ink::contract]
 mod game {
     #[cfg(not(feature = "ink-as-dependency"))]
     use ink_storage::collections::HashMap;
+    use alloc::collections::BTreeMap;
     
     #[ink(storage)]
     pub struct Game {
@@ -16,6 +18,7 @@ mod game {
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))] // todo: what is this?
     pub struct GameAccount {
 	level: u32,
+	level_programs: BTreeMap<u32, AccountId>,
 	// todo: other data for a captain
 	// e.g.: NFT pet, Erc20 gold in game
     }
@@ -24,6 +27,7 @@ mod game {
 	pub fn default() -> Self {
 	    GameAccount {
 		level: 0,
+		level_programs: BTreeMap::new(),
 	    }
 	}
     }
@@ -81,7 +85,7 @@ mod game {
 	/// - The account doesn't exist.
 	#[ink(message)]
 	pub fn get_game_account(&self, account: AccountId) -> Result<GameAccount, Error> {
-	    self.game_accounts.get(&account).cloned().ok_or(Error::AccountNotExists)	    
+	    self.game_accounts.get(&account).cloned().ok_or(Error::AccountNotExists)
 	}
 
 	/// Submit a program for a level puzzle
@@ -93,6 +97,11 @@ mod game {
 	/// - Program account doesn't exist.
 	#[ink(message, payable)]
 	pub fn submit_level(&mut self, level: u32, program_id: AccountId) -> Result<(), Error> {
+	    // get caller's game_account
+	    // return an error if the caller doesn't have a game_account
+	    // return an error if the submitted level is greater than current level
+	    // insert program_id (AccountId) into the level_programs HashMap
+	    
 	    panic!()
 	}
 
