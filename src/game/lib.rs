@@ -125,7 +125,6 @@ mod game {
             let caller = self.env().caller();
             // todo: veriy caller's program by calling its function
 
-
             Ok(())
         }
     }
