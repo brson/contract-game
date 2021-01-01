@@ -12,19 +12,28 @@ mod game {
 	game_accounts: HashMap<AccountId, GameAccount>,
     }
 
-    #[derive(Debug, scale::Encode, scale::Decode, ink_storage_derive::PackedLayout, ink_storage_derive::SpreadLayout)]
+    #[derive(Debug, Clone, scale::Encode, scale::Decode, ink_storage_derive::PackedLayout, ink_storage_derive::SpreadLayout)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))] // todo: what is this?
     pub struct GameAccount {
-	game_account_id: [u32; 8],
 	level: u32,
 	// todo: other data for a captain
 	// e.g.: NFT pet, Erc20 gold in game
     }
 
+    impl GameAccount {
+	pub fn default() -> Self {
+	    GameAccount {
+		level: 0,
+	    }
+	}
+    }
+    
     #[derive(Debug, scale::Encode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))] // todo: what is this?
     pub enum Error {
-	InsufficiantBalance,	
+	InsufficiantBalance,
+	AccountExists,
+	AccountNotExists,
     }
 
     // Contract methods
@@ -38,8 +47,8 @@ mod game {
 
 	/// Query if the caller has an account
 	#[ink(message)]
-	pub fn have_game_account(&self) -> bool {
-	    panic!()
+	pub fn have_game_account(&self, account: AccountId) -> bool {
+	    self.game_accounts.contains_key(&account)
 	}
 
 	/// Create an account for the caller
@@ -58,6 +67,8 @@ mod game {
 	    if balance < 1000 {
 		ink_env::debug_println("Your balance isn't enough for creating your captain");
 		Err(Error::InsufficiantBalance)
+	    } else if self.have_game_account(caller) {
+		Err(Error::AccountExists)
 	    } else {
 		self.create_a_captain(caller)
 	    }		
@@ -69,8 +80,12 @@ mod game {
 	///
 	/// - The account doesn't exist.
 	#[ink(message)]
-	pub fn get_game_account(&self) -> Result<GameAccount, Error> {
-	    panic!()
+	pub fn get_game_account(&self, account: AccountId) -> Result<GameAccount, Error> {
+	    let game_account = self.game_accounts.get(&account);
+	    match game_account {
+		Some(game_account) => Ok(game_account.clone()),
+		None =>	Err(Error::AccountNotExists)
+	    }
 	}
 
 	/// Submit a program for a level puzzle
@@ -101,18 +116,16 @@ mod game {
     // Methos support contracts
     impl Game {
 	fn create_a_captain(&mut self, account: AccountId) -> Result<GameAccount, Error> {
-	    // return an error if account/address is exists in the hashmap
-	    // create new captain_account
-	    // insert into the hashmap
-	    
-	    panic!()
+	    let new_game_account = GameAccount::default();
+
+	    self.game_accounts.insert(account, new_game_account.clone());
+	    Ok(new_game_account)
 	}
     }
     
     #[cfg(test)]
     mod tests {
         use super::*;
-
     }
 }
 
