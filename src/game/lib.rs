@@ -81,7 +81,7 @@ mod game {
 	/// - The account doesn't exist.
 	#[ink(message)]
 	pub fn get_game_account(&self, account: AccountId) -> Result<GameAccount, Error> {
-	    self.game_accounts.get(&account).ok_or(Error::AccountNotExists)	    
+	    self.game_accounts.get(&account).cloned().ok_or(Error::AccountNotExists)	    
 	}
 
 	/// Submit a program for a level puzzle
