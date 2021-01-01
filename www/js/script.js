@@ -1,5 +1,7 @@
 "use strict";
 
+import _ from "./node_modules/@polkadot/api";
+
 let gameController = null;
 
 function maybeLoad() {
@@ -39,6 +41,11 @@ function initAccountPage() {
     console.assert(accountStatusSpan);
     console.assert(createAccountButton);
     console.assert(accountLevelSpan);
+
+    walletConnectButton.disabled = false;
+
+    walletConnectButton.addEventListener("click", (event) => {
+    });
 }
 
 
