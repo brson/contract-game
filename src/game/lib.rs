@@ -1,14 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-extern crate alloc;
 use ink_lang as ink;
 
 #[ink::contract]
 mod game {
     #[cfg(not(feature = "ink-as-dependency"))]
     use ink_storage::collections::HashMap;
-    use alloc::{string::String, format};
-
     
     #[ink(storage)]
     pub struct Game {
@@ -26,8 +23,11 @@ mod game {
 
     #[derive(Debug, scale::Encode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))] // todo: what is this?
-    pub struct Error; 
-    
+    pub enum Error {
+	InsufficiantBalance,	
+    }
+
+    // Contract methods
     impl Game {
         #[ink(constructor)]
         pub fn default() -> Self {
@@ -49,20 +49,17 @@ mod game {
 	/// - The account exists.
 	/// - The paid amount is insufficient.
 	#[ink(message, payable)]
-	pub fn create_game_account(&mut self, role_name: String) -> Result<GameAccount, Error> {
+	pub fn create_game_account(&mut self) -> Result<GameAccount, Error> {
             let caller = self.env().caller();
 	    let balance = self.env().transferred_balance();
 
-	    if role_name_is_valid() { 
-		if balance < 1000 {
-		    ink_env::debug_println(&format!("Your balance isn't enough for creating your captain"));
-		    panic!()
-		} else {
-		    // create a captain costs xxxx money?
-		    create_a_captain(caller, &role_name)
-		}
+	    // create a captain costs 1000 money?
+	    // todo: return transferred_balance on Error?
+	    if balance < 1000 {
+		ink_env::debug_println("Your balance isn't enough for creating your captain");
+		Err(Error::InsufficiantBalance)
 	    } else {
-		panic!()
+		self.create_a_captain(caller)
 	    }		
 	}
 
@@ -101,14 +98,16 @@ mod game {
 	}
     }
 
-    fn role_name_is_valid() -> bool { 
-	panic!()
+    // Methos support contracts
+    impl Game {
+	fn create_a_captain(&mut self, account: AccountId) -> Result<GameAccount, Error> {
+	    // return an error if account/address is exists in the hashmap
+	    // create new captain_account
+	    // insert into the hashmap
+	    
+	    panic!()
+	}
     }
-
-    fn create_a_captain(account: AccountId, role_name: &str) -> Result<GameAccount, Error> {
-	panic!()
-    }
-
     
     #[cfg(test)]
     mod tests {
