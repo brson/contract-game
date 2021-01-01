@@ -1,11 +1,15 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate alloc;
 use ink_lang as ink;
-    
+
 #[ink::contract]
 mod game {
+    #[cfg(not(feature = "ink-as-dependency"))]
     use ink_storage::collections::HashMap;
+    use alloc::{string::String, format};
 
+    
     #[ink(storage)]
     pub struct Game {
 	game_accounts: HashMap<AccountId, GameAccount>,
@@ -45,8 +49,22 @@ mod game {
 	/// - The account exists.
 	/// - The paid amount is insufficient.
 	#[ink(message, payable)]
-	pub fn create_game_account(&mut self) -> Result<(), Error> {
-	    panic!()
+	pub fn create_game_account(&mut self, role_name: String) -> Result<GameAccount, Error> {
+            let caller = self.env().caller();
+//	    let balance = balanceof(caller);
+	    let balance = 0;
+
+	    if role_name_is_valid() { 
+		if balance < 1000 {
+		    ink_env::debug_println(&format!("Your balance isn't enough for creating your captain"));
+		    panic!()
+		} else {
+		    // create a captain costs xxxx money?
+		    create_a_captain(caller, &role_name)
+		}
+	    } else {
+		panic!()
+	    }		
 	}
 
 	/// Retrieve caller's account information
@@ -84,9 +102,19 @@ mod game {
 	}
     }
 
+    fn role_name_is_valid() -> bool { 
+	panic!()
+    }
+
+    fn create_a_captain(account: AccountId, role_name: &str) -> Result<GameAccount, Error> {
+	panic!()
+    }
+
+    
     #[cfg(test)]
     mod tests {
         use super::*;
 
     }
 }
+
