@@ -1,11 +1,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use ink_lang as ink;
-    
+
 #[ink::contract]
 mod game {
+    #[cfg(not(feature = "ink-as-dependency"))]
     use ink_storage::collections::HashMap;
-
+    
     #[ink(storage)]
     pub struct Game {
 	game_accounts: HashMap<AccountId, GameAccount>,
@@ -22,8 +23,11 @@ mod game {
 
     #[derive(Debug, scale::Encode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))] // todo: what is this?
-    pub struct Error; 
-    
+    pub enum Error {
+	InsufficiantBalance,	
+    }
+
+    // Contract methods
     impl Game {
         #[ink(constructor)]
         pub fn default() -> Self {
@@ -45,8 +49,18 @@ mod game {
 	/// - The account exists.
 	/// - The paid amount is insufficient.
 	#[ink(message, payable)]
-	pub fn create_game_account(&mut self) -> Result<(), Error> {
-	    panic!()
+	pub fn create_game_account(&mut self) -> Result<GameAccount, Error> {
+            let caller = self.env().caller();
+	    let balance = self.env().transferred_balance();
+
+	    // create a captain costs 1000 money?
+	    // todo: return transferred_balance on Error?
+	    if balance < 1000 {
+		ink_env::debug_println("Your balance isn't enough for creating your captain");
+		Err(Error::InsufficiantBalance)
+	    } else {
+		self.create_a_captain(caller)
+	    }		
 	}
 
 	/// Retrieve caller's account information
@@ -84,9 +98,21 @@ mod game {
 	}
     }
 
+    // Methos support contracts
+    impl Game {
+	fn create_a_captain(&mut self, account: AccountId) -> Result<GameAccount, Error> {
+	    // return an error if account/address is exists in the hashmap
+	    // create new captain_account
+	    // insert into the hashmap
+	    
+	    panic!()
+	}
+    }
+    
     #[cfg(test)]
     mod tests {
         use super::*;
 
     }
 }
+
