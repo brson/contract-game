@@ -1,51 +1,48 @@
 "use strict";
 
-function onLoad() {
-    installEventHandlers();
-}
+let gameController = null;
 
-function installEventHandlers() {
-    let basicFloors = document.querySelectorAll(".floor-basic");
-
-    for (let basicFloor of basicFloors) {
-        basicFloor.addEventListener("click", onClickBasicFloor);
-    }
-}
-
-function onClickBasicFloor(event) {
-    let targetElt = event.currentTarget;
-    let detailElt = targetElt.nextElementSibling;
-
-    console.assert(detailElt);
-    console.assert(detailElt.classList.contains("floor-detail"));
-
-    detailElt.classList.toggle("visible");
-
-    let floorElt = targetElt.parentNode;
-
-    console.assert(floorElt);
-    console.assert(floorElt.classList.contains("floor"));
-
-    let towerElt = floorElt.parentNode;
-
-    console.assert(towerElt);
-    console.assert(towerElt.classList.contains("tower"));
-
-    towerElt.classList.toggle("collapsed");
-
-    console.log(towerElt.children);
-
-    for (let floorElt of towerElt.children) {
-        floorElt.classList.remove("top-stacked-floor");
-    }
-
-    floorElt.classList.add("top-stacked-floor");
-}
-
-if (document.readyState == "loading") {
-    document.addEventListener("DOMContentLoaded", (event) => {
+function maybeLoad() {
+    if (document.readyState == "loading") {
+        document.addEventListener("DOMContentLoaded", (event) => {
+            onLoad();
+        });
+    } else {
         onLoad();
-    });
-} else {
-    onLoad();
+    }
 }
+
+function onLoad() {
+    gameController = {
+    };
+
+    initPage();
+}
+
+function initPage() {
+    if (document.getElementById("account-page") != null) {
+        initAccountPage();
+    }
+}
+
+function initAccountPage() {
+    let walletStatusSpan = document.getElementById("wallet-status");
+    let walletConnectButton = document.getElementById("wallet-connect");
+    let accountIdSpan = document.getElementById("account-id");
+    let accountStatusSpan = document.getElementById("account-status");
+    let createAccountButton = document.getElementById("create-account");
+    let accountLevelSpan = document.getElementById("account-level");
+
+    console.assert(walletStatusSpan);
+    console.assert(walletConnectButton);
+    console.assert(accountIdSpan);
+    console.assert(accountStatusSpan);
+    console.assert(createAccountButton);
+    console.assert(accountLevelSpan);
+}
+
+
+
+
+
+maybeLoad();
