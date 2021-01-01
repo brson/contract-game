@@ -51,8 +51,7 @@ mod game {
 	#[ink(message, payable)]
 	pub fn create_game_account(&mut self, role_name: String) -> Result<GameAccount, Error> {
             let caller = self.env().caller();
-//	    let balance = balanceof(caller);
-	    let balance = 0;
+	    let balance = self.env().transferred_balance();
 
 	    if role_name_is_valid() { 
 		if balance < 1000 {
