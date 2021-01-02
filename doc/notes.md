@@ -181,6 +181,67 @@ three polyfills in my `webpack.config.js`:
         }
 ```
 
-
-
 [wri]: https://webpack.js.org/configuration/resolve/
+
+Hours and hours go by...
+
+I'm using webpack 5,
+which doesn't do a bunch of node polyfills when it compiles
+for the browser.
+I think that's a big part of my pain.
+
+After tons of Googling and hacking I finally manage
+to load the polkadot JS API in my mostly vanilla JS
+web page.
+
+I have to do a lot of hacks.
+
+At the end my `webpack.config.js` looks like
+
+```js
+const path = require("path");
+const webpack = require("webpack");
+
+module.exports = {
+    mode: "development",
+    entry: './src/index.js',
+    output: {
+        filename: 'js/bundle.js',
+        path: path.resolve(__dirname, 'dist'),
+    },
+    resolve: {
+        fallback: {
+            "buffer": require.resolve("buffer"),
+            "crypto": require.resolve("crypto-browserify"),
+            "stream": require.resolve("stream-browserify")
+        }
+    },
+    plugins: [
+        new webpack.ProvidePlugin({
+            Buffer: ['buffer', 'Buffer'],
+        }),
+    ]
+};
+```
+
+That `plugins` section is new and mysterious,
+just copy pasted from [some commit to some other
+software project][webhack].
+
+[webhack]: https://github.com/duplotech/create-react-app/commit/d0be703d40cd4bc32cd91128ba407a138c608243#diff-8e25c4f6f592c1fcfc38f0d43d62cbd68399f44f494c1b60f0cf9ccd7344d697
+
+I also have this lovely garbage in my HTML header
+before loading my webpack bundle:
+
+```html
+  <script>
+    let global = window;
+    let process = {
+      "versions": null
+    };
+  </script>
+```
+
+Yup.
+
+Somebody tell me what I'm doing wrong. Please.

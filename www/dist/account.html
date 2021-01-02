@@ -7,7 +7,14 @@
 
   <link href="css/style.css" rel="stylesheet">
 
-  <script src="js/main.js" type="module" async></script>
+  <script>
+    let global = window;
+    let process = {
+      "versions": null
+    };
+  </script>
+  <script src="js/bundle.js"></script>
+  <script src="js/script.js" async></script>
 </head>
 
 <div id="account-page"></div>
