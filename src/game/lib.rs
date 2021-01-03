@@ -19,8 +19,6 @@ mod game {
     pub struct GameAccount {
         level: u32,
         level_programs: BTreeMap<u32, AccountId>,
-        // todo: other data for a captain
-        // e.g.: NFT pet, Erc20 gold in game
     }
 
     impl GameAccount {
@@ -40,6 +38,7 @@ mod game {
         AccountNotExists,
         SubmitProgramFailed,
         SubmittedGreaterLevel,
+        ProgramNotExists,
     }
 
     // Contract methods
@@ -99,6 +98,7 @@ mod game {
         /// - Program account doesn't exist.
         #[ink(message, payable)]
         pub fn submit_level(&mut self, level: u32, program_id: AccountId) -> Result<AccountId, Error> {
+            // todo: verify transferred balance
             let caller = self.env().caller();
             
             if let Some(game_account) = self.game_accounts.get_mut(&caller) {
@@ -121,11 +121,17 @@ mod game {
         /// - Caller has no submiss for this level.
         /// - Submitted program doesn't implement required contracts.
         #[ink(message, payable)]
-        pub fn run_level(&mut self, level: u32, program_id: AccountId) -> Result<(), Error> {
+        pub fn run_level(&mut self, level: u32) -> Result<bool, Error> {
             let caller = self.env().caller();
-            // todo: veriy caller's program by calling its function
-
-            Ok(())
+            if let Some(game_account) = self.game_accounts.get_mut(&caller) {
+                if let Some(program_id) = game_account.level_programs.get(&level) {
+                    dispatch_level(level, program_id.clone())                    
+                } else {
+                    Err(Error::ProgramNotExists)
+                }
+            } else {
+                Err(Error::AccountNotExists)
+            }        
         }
     }
 
@@ -137,7 +143,10 @@ mod game {
             self.game_accounts.insert(account, new_game_account.clone());
             Ok(new_game_account)
         }
-        
+    }
+
+    fn dispatch_level(level: u32, program_id: AccountId) -> Result<bool, Error> {
+        Ok(true)
     }
     
     #[cfg(test)]
