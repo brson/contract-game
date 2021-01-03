@@ -1,5 +1,6 @@
 "use strict";
 
+let ApiPromise = null;
 let gameController = null;
 
 function maybeLoad() {
@@ -13,10 +14,22 @@ function maybeLoad() {
 }
 
 function onLoad() {
+    loadApis();
+
     gameController = {
     };
 
     initPage();
+}
+
+function loadApis() {
+    console.assert(document.apiBundle);
+
+    ApiPromise = document.apiBundle.ApiPromise;
+
+    console.assert(ApiPromise);
+
+    console.log(ApiPromise);
 }
 
 function initPage() {
@@ -39,6 +52,11 @@ function initAccountPage() {
     console.assert(accountStatusSpan);
     console.assert(createAccountButton);
     console.assert(accountLevelSpan);
+
+    walletConnectButton.disabled = false;
+
+    walletConnectButton.addEventListener("click", (event) => {
+    });
 }
 
 
