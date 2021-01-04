@@ -8,6 +8,13 @@ mod game {
     #[cfg(not(feature = "ink-as-dependency"))]
     use ink_storage::collections::HashMap;
     use alloc::collections::BTreeMap;
+    use alloc::format;
+    use ink_env::call::Selector;
+    use ink_env::call::build_call;
+    use ink_env::DefaultEnvironment;
+    use ink_env::call::ExecutionInput;
+    use ink_env::call::utils::ReturnType;
+    use core::convert::TryFrom;
     
     #[ink(storage)]
     pub struct Game {
@@ -133,6 +140,20 @@ mod game {
                 Err(Error::AccountNotExists)
             }        
         }
+
+        #[ink(message, payable)]
+        pub fn run_leve_test(&mut self) -> bool {
+            let program_id = "4cfac7f74c6233449b5e54ba070231dd94c71b89505482cd910000656258d3ed";
+            ink_env::debug_println(&format!("hash {:?}", program_id));
+            
+            let program_id = hex::decode(program_id).unwrap();
+            ink_env::debug_println(&format!("decode {:?}", program_id));
+            
+            let program_id = AccountId::try_from(&program_id[..]).unwrap();
+            ink_env::debug_println(&format!("AccountId {:?}", program_id));
+
+            true
+        }
     }
 
     // Methos support contracts
@@ -146,7 +167,30 @@ mod game {
     }
 
     fn dispatch_level(level: u32, program_id: AccountId) -> Result<bool, Error> {
-        Ok(true)
+        let program_id = "4cfac7f74c6233449b5e54ba070231dd94c71b89505482cd910000656258d3ed";
+        ink_env::debug_println(&format!("hash {:?}", program_id));
+        
+        let program_id = hex::decode(program_id).unwrap();
+        ink_env::debug_println(&format!("decode {:?}", program_id));
+       
+        let program_id = AccountId::try_from(&program_id[..]).unwrap();
+        ink_env::debug_println(&format!("AccountId {:?}", program_id));
+
+        let return_value: bool = build_call::<DefaultEnvironment>()
+            .callee(program_id) 
+            .gas_limit(50)
+            .transferred_value(10)
+            .exec_input(
+                ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xEF]))
+//                    .push_arg(42)
+//                    .push_arg(true)
+//                    .push_arg(&[0x10; 32])
+            )
+            .returns::<ReturnType<bool>>()
+            .fire()
+            .unwrap();
+
+        Ok(return_value)
     }
     
     #[cfg(test)]
