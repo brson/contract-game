@@ -23,16 +23,20 @@ function loadApis() {
 
     let ApiPromise = document.apiBundle.ApiPromise;
     let WsProvider = document.apiBundle.WsProvider;
+    let Keyring = document.apiBundle.Keyring;
 
     console.assert(ApiPromise);
     console.assert(WsProvider);
+    console.assert(Keyring);
 
     console.log(ApiPromise);
     console.log(WsProvider);
+    console.log(Keyring);
 
     polkadot = {
         ApiPromise,
-        WsProvider
+        WsProvider,
+        Keyring
     };
 }
 
