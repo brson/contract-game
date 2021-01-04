@@ -1,7 +1,8 @@
 "use strict";
 
-import { ApiPromise } from "@polkadot/api";
+import { ApiPromise, WsProvider } from "@polkadot/api";
 
 document.apiBundle = {
-    ApiPromise
+    ApiPromise,
+    WsProvider
 };
