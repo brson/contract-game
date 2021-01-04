@@ -56,6 +56,41 @@ but for now we want our code to be readable,
 not efficient.
 
 
+For each level of our game,
+our game contract needs to call a player's "level contract".
+So each of our levels defines a contract interface,
+and each player implements that interface in their own
+contract for the level.
+
+When we start trying to figure out how to call another
+arbitrary contract,
+using only some interface,
+we run into a lack of examples and documentation.
+
+
+
+
+While incrementally adding features,
+experimenting with ink APIs,
+and attempting to debug,
+we find that we don't know how to do "println debugging":
+ink defines [`ink_env::debug_println`],
+but when we use it we don't see any output anywhere.
+
+[`ink_env::debug_println`]: https://paritytech.github.io/ink/ink_env/fn.debug_println.html
+
+I aske in the `#ink:matrix.parity.io` channel where to see the output,
+and Alexander Theißen replies:
+
+> "They are printed to the console. You need to raise the log level for `runtime`
+  module in order to see them. I also recommend to silence all the block
+  production noise: `-lerror,runtime=debug`"
+
+So those are presumably flags to `canvas-node`. TODO
+
+
+
+
 ## Connecting to our contract with polkadot-js
 
 It's strange that the JS compononts are "polkadot"-branded,
