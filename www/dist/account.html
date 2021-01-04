@@ -7,17 +7,16 @@
 
   <link href="css/style.css" rel="stylesheet">
 
-  <script>
-    let global = window;
-    let process = {
-      "versions": null
-    };
-  </script>
-  <script src="js/bundle.js"></script>
-  <script src="js/script.js" async></script>
+  <script src="js/polyfill.js"></script>
+  <script src="js/bundle.js" async></script>
+  <script src="js/script.js" type="module" async></script>
 </head>
 
 <div id="account-page"></div>
+
+<p>Node status: <span id="node-status">disconnected</span></p>
+
+<p><button id="node-connect" type="button" disabled>Connect to node</button></p>
 
 <p>Wallet status: <span id="wallet-status">disconnected</span></p>
 
