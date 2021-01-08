@@ -32,21 +32,14 @@ function initPage() {
 function initAccountPage() {
     let nodeStatusSpan = document.getElementById("node-status");
     let nodeConnectButton = document.getElementById("node-connect");
-    let walletStatusSpan = document.getElementById("wallet-status");
+
+    let keyringStatusSpan = document.getElementById("wallet-status");
     let walletConnectButton = document.getElementById("wallet-connect");
     let accountIdSpan = document.getElementById("account-id");
     let accountStatusSpan = document.getElementById("account-status");
-    let createAccountButton = document.getElementById("create-account");
-    let accountLevelSpan = document.getElementById("account-level");
 
-    console.assert(nodeStatusSpan);
-    console.assert(nodeConnectButton);
-    console.assert(walletStatusSpan);
-    console.assert(walletConnectButton);
-    console.assert(accountIdSpan);
-    console.assert(accountStatusSpan);
-    console.assert(createAccountButton);
-    console.assert(accountLevelSpan);
+    let createGameAccountButton = document.getElementById("create-game-account");
+    let gameAccountLevelSpan = document.getElementById("account-level");
 
     nodeConnectButton.disabled = false;
 

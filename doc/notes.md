@@ -89,7 +89,50 @@ and Alexander Theißen replies:
 So those are presumably flags to `canvas-node`.
 
 
+We have Alice construct our game contract,
+and want to test having that contract
+call another contract (a "level contract").
+For testing purposes that level contract is the
+"flipper" example contract.
+We upload that contract and have Bob construct it.
 
+We are confused about:
+
+- Are contracts identified by users' account IDs,
+  or do they have their own account IDs?
+- How can we find the account ID of a contract we've constructed?
+
+We're confused every step of the way.
+
+While trying to figure out Bob's account ID we make two discoveries:
+
+1) The `subkey inspect` command:
+
+    ```
+    subkey inspect //Bob
+    Secret Key URI `//Bob` is account:
+      Secret seed:      0x398f0c28f98885e046333d4a41c19cee4c37368a9832c6502f6cfd182e2aef89
+      Public key (hex): 0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48
+      Account ID:       0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48
+      SS58 Address:     5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty
+    ```
+
+    I don't fully understand how to specify account names, but I know
+    that `//Alice` and `//Bob` are known test accounts. This `subkey inspect`
+    command gives the account id and secret key.
+
+    The `subkey` command is part of the substrate repo and [the command
+    for installing it is a bit awkward][subkeycommand], but easy enough
+    to copy-paste.
+
+2) The [polkadot explorer][pex] can be configured to connect to my
+   local devnet!
+
+   This seems pretty huge. I can see account ID's here, and hopefully
+   even more useful info about what is going on inside my devnet.
+
+[subkeycommand]: https://substrate.dev/docs/en/knowledgebase/integrate/subkey#build-from-source
+[pex]: https://polkadot.js.org/apps/#/explorer
 
 
 ## Connecting to our contract with polkadot-js
