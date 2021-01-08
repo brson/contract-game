@@ -19,25 +19,8 @@ function onLoad() {
 }
 
 function loadApis() {
-    console.assert(document.apiBundle);
-
-    let ApiPromise = document.apiBundle.ApiPromise;
-    let WsProvider = document.apiBundle.WsProvider;
-    let Keyring = document.apiBundle.Keyring;
-
-    console.assert(ApiPromise);
-    console.assert(WsProvider);
-    console.assert(Keyring);
-
-    console.log(ApiPromise);
-    console.log(WsProvider);
-    console.log(Keyring);
-
-    polkadot = {
-        ApiPromise,
-        WsProvider,
-        Keyring
-    };
+    console.assert(document.polkadotApiBundle);
+    polkadot = document.polkadotApiBundle;
 }
 
 function initPage() {

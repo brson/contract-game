@@ -4,7 +4,9 @@
     "main": "index.js",
     "license": "MIT",
     "dependencies": {
-        "@polkadot/api": "^3.2.3",
+        "@polkadot/api": "^3.3.2",
+        "@polkadot/api-contract": "^3.3.2",
+        "@polkadot/keyring": "^5.2.3",
         "buffer": "^6.0.3",
         "crypto-browserify": "^3.12.0",
         "stream-browserify": "^3.0.0",

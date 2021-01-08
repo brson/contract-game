@@ -86,7 +86,8 @@ and Alexander Theißen replies:
   module in order to see them. I also recommend to silence all the block
   production noise: `-lerror,runtime=debug`"
 
-So those are presumably flags to `canvas-node`. TODO
+So those are presumably flags to `canvas-node`.
+
 
 
 
