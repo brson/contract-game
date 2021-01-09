@@ -135,6 +135,52 @@ While trying to figure out Bob's account ID we make two discoveries:
 [pex]: https://polkadot.js.org/apps/#/explorer
 
 
+
+Both canvas-ui and the polkadot.js explorer cache information about
+code hashes (and probably other things) they've seen, but
+which don't actually exist on the chain they are currently connected to.
+This is maddening every time I restart my devnet and see a bunch of
+hashes of old contracts that I can't distinguish from the new contracts.
+
+These apps should either verify these code hashes actually exist on
+chain, or at least give me a big red "reset" button to purge all
+this incorrect info.
+
+At some point I had canvas-ui showing me two "flipper" contracts,
+and I didn't know which one was real,
+so I told it to "forget" both of them.
+Then I tried to redeploy flipper,
+but of course flipper was already deployed so I got an error,
+and now I don't know the correct address of flipper,
+and can't add it back to the UI and I'm stuck,
+have to shut down my devnet and restart it.
+
+I now have a habit of going through all the canvas-ui tabs
+and "forgetting" everything every time I restart canvas-node.
+
+At least the polkadot explorer says "not on-chain" for code
+hashes that don't actually exist.
+
+Another note: there are many opportunities in both UIs to
+"add a code hash", but it seems like this option is useless
+unless you also provide the contract metadata.
+TODO why this sucks
+
+After some experimenting I learn that
+constructing a contract creates a new account;
+that is, a contract is not associated with the account
+of the user that creates it; a contract has its own account.
+
+
+
+We execute transactions in the canvas-ui, but no
+events seem to register in the explorer ui.
+
+We're going to have to add logging _everywhere_
+to have any clue what the hell is going on.
+
+
+
 ## Connecting to our contract with polkadot-js
 
 It's strange that the JS compononts are "polkadot"-branded,

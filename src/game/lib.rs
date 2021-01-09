@@ -131,7 +131,9 @@ mod game {
         pub fn run_level(&mut self, level: u32) -> Result<bool, Error> {
             let caller = self.env().caller();
             if let Some(game_account) = self.game_accounts.get_mut(&caller) {
+                ink_env::debug_println(&format!("game account: {:?}", game_account));
                 if let Some(program_id) = game_account.level_programs.get(&level) {
+                    ink_env::debug_println(&format!("program id: {:?}", program_id));
                     dispatch_level(level, program_id.clone())                    
                 } else {
                     Err(Error::ProgramNotExists)
@@ -142,7 +144,12 @@ mod game {
         }
 
         #[ink(message, payable)]
-        pub fn run_leve_test(&mut self) -> bool {
+        pub fn run_level_test_2(&mut self, program_id: AccountId) -> Result<bool, Error> {
+            dispatch_level(5, program_id)
+        }
+
+        #[ink(message, payable)]
+        pub fn run_level_test(&mut self) -> bool {
             let program_id = "4cfac7f74c6233449b5e54ba070231dd94c71b89505482cd910000656258d3ed";
             ink_env::debug_println(&format!("hash {:?}", program_id));
             
@@ -167,29 +174,40 @@ mod game {
     }
 
     fn dispatch_level(level: u32, program_id: AccountId) -> Result<bool, Error> {
-        let program_id = "4cfac7f74c6233449b5e54ba070231dd94c71b89505482cd910000656258d3ed";
+        /*let program_id = "4cfac7f74c6233449b5e54ba070231dd94c71b89505482cd910000656258d3ed";
         ink_env::debug_println(&format!("hash {:?}", program_id));
         
         let program_id = hex::decode(program_id).unwrap();
         ink_env::debug_println(&format!("decode {:?}", program_id));
        
         let program_id = AccountId::try_from(&program_id[..]).unwrap();
-        ink_env::debug_println(&format!("AccountId {:?}", program_id));
+        ink_env::debug_println(&format!("AccountId {:?}", program_id));*/
 
-        let return_value: bool = build_call::<DefaultEnvironment>()
+        ink_env::debug_println(&format!("calling flip on {:?}", program_id));
+        let return_value: () = build_call::<DefaultEnvironment>()
             .callee(program_id) 
             .gas_limit(50)
             .transferred_value(10)
             .exec_input(
                 ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xEF]))
-//                    .push_arg(42)
-//                    .push_arg(true)
-//                    .push_arg(&[0x10; 32])
+            )
+            .returns::<ReturnType<()>>()
+            .fire()
+            .unwrap();
+
+        ink_env::debug_println(&format!("calling get on {:?}", program_id));
+        let return_value: bool = build_call::<DefaultEnvironment>()
+            .callee(program_id) 
+            .gas_limit(50)
+            .transferred_value(10)
+            .exec_input(
+                ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF]))
             )
             .returns::<ReturnType<bool>>()
             .fire()
             .unwrap();
-
+        
+        ink_env::debug_println(&format!("return value {}", return_value));
         Ok(return_value)
     }
     
