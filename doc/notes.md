@@ -370,3 +370,113 @@ before loading my webpack bundle:
 Yup.
 
 Somebody tell me what I'm doing wrong. Please.
+
+
+
+## First, some hopefulness
+
+As I learn about Substrate and the corners of its ecosystem,
+I do feel a bit giddy.
+The high level docs are pretty enlightening to read,
+and I find myself keeping them open in a browser tab,
+and just perusing them sometimes;
+I think they provide some good insight into the structure
+of modern programmable blockchains generally,
+not just Substrate.
+And when I discovered that Polkadot explorers,
+specefically the one at [polkadot.js.org][pex],
+can more-or-less seemlessly work with any substrate chain,
+even my own dev chain,
+I was kind of blown away.
+
+I can see the possibility of many people building
+new and different chains, that can all interoperate,
+on one powerful toolkit.
+
+It seems like it could be fun to be a part of.
+
+
+## Last, some venting
+
+Right now though, it is not fun.
+Writing applications on blockchains is not fun,
+both generally,
+and specifically in the case of Substrate,
+for many reasons.
+
+Smart contract programming continues to be challenging.
+Learning new things always is I knw,
+but I'm finding myself surprised at how long it is
+taking me to turn the corner and understand what I'm doing.
+
+Programming a smart-contract-based application for
+Substrate requires at least three kinds of expertise:
+
+- Rust programming and its idiosyncracies and ecosystem
+- Node programming and its complexly layered ecosystem
+- Blockchain technology and its alien and rapidly changing
+  form of software construction and interaction
+
+If one doesn't literally need to be an "expert" in
+these things, then at least one needs intermediate experience
+in both Rust and Node to make any kind of satisfying progress
+on the path to learning Substrate.
+
+All three of these technologies are intimidating,
+combining them is brutal.
+
+And before much longer smart contract programmers are going
+to need to understend zero-knowledge cryptography too.
+
+How can this complexity ever be reduced to something an average programmer can
+manage? The blockchain ecosystem just seems to be exploding in complexity.
+
+I can hardly imagine the path forward,
+but I hope one day there is a contraction and consolidation
+of all the complexity,
+of the extremely many slightly-different models of permissionless
+distributed programming evolving all over the industry.
+
+
+This is all without even addressing the horriffically
+immature state of developer tooling in blockchain ecosystems.
+It will be a decade before the smart contract programming experience,
+on any chain,
+is as convenient as the traditional programming experience.
+There just aren't enough resources dedicated to it,
+nor reason to bother dedicating the resources.
+With blockchain programming having such an incredibly
+small developer audience, given the limited application domains,
+and the extreme expertise necessary to participate,
+the momentum isn't there to sustain
+
+The blockchain world appears to be filled with developer tooling
+projects that fulfill their grant's contractual requirements,
+and then stop evolving.
+
+It's an entire universe of 90% solutions.
+
+
+
+My partner is learning to program right now,
+and I am patiently watching her go through all the difficulties
+every programmer goes through as they discover basic computer
+science topics. I try to be empathetic by remembering
+my learning experience so long ago, of hacking out simple
+programs without understanding.
+
+I am feeling a lot of that again now.
+I have been following the progress of blockchain tech for
+quite a long time now,
+and doing some hands on programming on and off for
+nearly a year.
+That combined with my long background in writing software
+gives me a lot of intuition about how software running
+on the blockchain _should_ work.
+But I still feel lost.
+I am still not seeing the big picture.
+
+I am going to continue trying though,
+and hoping for a moment of enlightenment,
+where it all feels right,
+and where the fun begins.
