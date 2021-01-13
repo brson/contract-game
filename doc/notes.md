@@ -396,7 +396,7 @@ on one powerful toolkit.
 It seems like it could be fun to be a part of.
 
 
-## Last, some venting
+## Next, some venting
 
 Right now though, it is not fun.
 Writing applications on blockchains is not fun,
@@ -457,6 +457,7 @@ and then stop evolving.
 It's an entire universe of 90% solutions.
 
 
+## It's ok - I'm learning
 
 My partner is learning to program right now,
 and I am patiently watching her go through all the difficulties
