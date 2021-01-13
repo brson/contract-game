@@ -384,7 +384,7 @@ I think they provide some good insight into the structure
 of modern programmable blockchains generally,
 not just Substrate.
 And when I discovered that Polkadot explorers,
-specefically the one at [polkadot.js.org][pex],
+specifically the one at [polkadot.js.org][pex],
 can more-or-less seemlessly work with any substrate chain,
 even my own dev chain,
 I was kind of blown away.
@@ -405,16 +405,16 @@ and specifically in the case of Substrate,
 for many reasons.
 
 Smart contract programming continues to be challenging.
-Learning new things always is I knw,
+Learning new things always is I know,
 but I'm finding myself surprised at how long it is
 taking me to turn the corner and understand what I'm doing.
 
 Programming a smart-contract-based application for
 Substrate requires at least three kinds of expertise:
 
-- Rust programming and its idiosyncracies and ecosystem
-- Node programming and its complexly layered ecosystem
-- Blockchain technology and its alien and rapidly changing
+- Rust programming, and its idiosyncracies and ecosystem
+- Node programming, and its complexly layered ecosystem
+- Blockchain technology, and its alien and rapidly changing
   form of software construction and interaction
 
 If one doesn't literally need to be an "expert" in
@@ -422,11 +422,14 @@ these things, then at least one needs intermediate experience
 in both Rust and Node to make any kind of satisfying progress
 on the path to learning Substrate.
 
-All three of these technologies are intimidating,
-combining them is brutal.
+Each of these three technologies is intimidating,
+but combining them is brutal.
 
 And before much longer smart contract programmers are going
 to need to understend zero-knowledge cryptography too.
+TODO
+
+TODO mention tokenomics?
 
 How can this complexity ever be reduced to something an average programmer can
 manage? The blockchain ecosystem just seems to be exploding in complexity.
@@ -438,17 +441,17 @@ of the extremely many slightly-different models of permissionless
 distributed programming evolving all over the industry.
 
 
-This is all without even addressing the horriffically
+This is all without even addressing the horrifically
 immature state of developer tooling in blockchain ecosystems.
 It will be a decade before the smart contract programming experience,
 on any chain,
 is as convenient as the traditional programming experience.
 There just aren't enough resources dedicated to it,
-nor reason to bother dedicating the resources.
+nor reason to bother dedicating those resources.
 With blockchain programming having such an incredibly
 small developer audience, given the limited application domains,
 and the extreme expertise necessary to participate,
-the momentum isn't there to sustain
+the momentum isn't there to sustain the TODO
 
 The blockchain world appears to be filled with developer tooling
 projects that fulfill their grant's contractual requirements,
@@ -466,9 +469,9 @@ science topics. I try to be empathetic by remembering
 my learning experience so long ago, of hacking out simple
 programs without understanding.
 
-I am feeling a lot of that again now.
+I am feeling a lot of that pain again now as a smart contract learner.
 I have been following the progress of blockchain tech for
-quite a long time now,
+quite a long time,
 and doing some hands on programming on and off for
 nearly a year.
 That combined with my long background in writing software
