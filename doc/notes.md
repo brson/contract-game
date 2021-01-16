@@ -88,6 +88,15 @@ and Alexander Theißen replies:
 
 So those are presumably flags to `canvas-node`.
 
+Now I am running my canvas node, from source, with the command
+
+```
+cargo run -- --dev --tmp -lerror,runtime=debug
+```
+
+
+
+
 
 We have Alice construct our game contract,
 and want to test having that contract
@@ -178,6 +187,367 @@ events seem to register in the explorer ui.
 
 We're going to have to add logging _everywhere_
 to have any clue what the hell is going on.
+
+
+
+## Debugging cross-contract calls
+
+We ran into our first big blocker:
+we can't figure out how to call another contract via interface.
+
+The ink repo contains examples of defining traits,
+via `#[trait_definition]`
+and calling contracts through them,
+but those examples all still have direct access to the _implementations_
+of those traits.
+That is too limiting for our needs.
+
+By browsing the API docs we came across [CallBuilder],
+which appears to call an arbitrary method in another contract,
+given that contract's account id, a known _method selector_,
+which is a unique ID used to identify a method,
+and the configuration for the args, return value,
+gas, and other things.
+
+[CallBuilder]: https://paritytech.github.io/ink/ink_env/call/struct.CallBuilder.html
+
+We tried to use this and failed.
+And failed.
+
+And failed.
+
+For days.
+
+We were discouraged,
+and it was hard to come back to this problem,
+but we can't make any progress without solving it.
+
+So that's today's mission.
+
+
+### But first, updating our tools
+
+Since the canvas tools are immature,
+and it has been over a week since I last used them,
+I first pull and rebuild `canvas-node`,
+`cargo-contract`, and `canvas-ui`.
+
+I recall that last time I built `canvas-ui` it
+would not successfully connect to my `canvas-node` instance,
+and I hope things have changed.
+
+After running `git pull` on `canvas-node`,
+I see no new commits, which is surprising &mdash;
+no changes since December 2!
+
+Development must not happen on the master branch.
+Wait, there's no obvious development branch either.
+It seems that canvas-node really hasn't changed in over a month.
+
+With consideration,
+this is pretty reasonable,
+since canvas-node is just an instantiation of the gigantic
+substrate toolkit &mdash;
+it is only 1200 lines of code &mdash;
+so most development goes directly into substrate.
+
+This though makes me wonder if I can update canvas's substrate revision
+(also if I should).
+It is something I am curious to attempt,
+but doesn't seem prudent right now,
+since presumably most everybody else using canvas-node is using the substrate revisions in Cargo.lock.
+
+`cargo-canvas` has updates and I install them from the source directory with
+
+```
+git pull
+cargo install --path .
+```
+
+I notice that while I usually run `canvas-node` directly from the source directory via `cargo`,
+I have been installing `cargo-canvas`.
+I think this is because the two have different usage models:
+`canvas-node` is a server and I mostly just leave it running in a tmux window;
+`cargo-canvas` though is a tool I might need to run in any of multiple windows
+for different purposes.
+
+`canvas-ui` also has updates and I build them with ... (I have to look this up in `package.json`):
+
+```
+git pull
+yarn install
+```
+
+and then I try the `yarn build` command listed in `package.json`,
+thinking that it is probably one of the prerequisites to `yarn start`,
+but it doesn't seem so,
+as it doesn't work, printing
+
+```
+command not found: node_modules/@polkadot/dev/scripts/polkadot-dev-build-ts.js
+```
+
+and exiting with an error code.
+That's fine: I know how to run `canvas-ui` with `yarn start`.
+It takes a long time to start up though,
+and I was hoping I could do some of that webpacking or whatever ahead of time.
+
+While I'm tinkering with building my tooling,
+I wonder if I can install an updated [`subkey`] tool from source.
+
+I `cd` into my substrate source directory and run
+
+```
+git pull
+cargo install --path bin/utils/subkey/
+```
+
+It works. I have updated tools.
+Enough procrastinating; time to solve problems.
+
+
+### And then debugging cross-contract calls
+
+What happens when we try to call a method via `CallBuilder` is
+that `canvas-node` logs (when `-lruntime=debug` is passed on the command line):
+
+```
+2021-01-14 16:34:36.014  DEBUG tokio-runtime-worker runtime:DispatchError
+2021-01-14 16:34:36.014  DEBUG tokio-runtime-worker runtime:8
+2021-01-14 16:34:36.014  DEBUG tokio-runtime-worker runtime:17
+2021-01-14 16:34:36.014  DEBUG tokio-runtime-worker runtime:ContractTrapped
+2021-01-14 16:34:36.014  DEBUG tokio-runtime-worker runtime:PostInfo:
+2021-01-14 16:34:36.014  DEBUG tokio-runtime-worker runtime:actual_weight=
+2021-01-14 16:34:36.014  DEBUG tokio-runtime-worker runtime:7172485790
+2021-01-14 16:34:36.014  DEBUG tokio-runtime-worker runtime:pays_fee=
+2021-01-14 16:34:36.014  DEBUG tokio-runtime-worker runtime:Yes
+```
+
+As the only clue to what's happening, it's some pretty horrible feedback.
+By ripgrepping the substrate code [for `DispatchError`][fde] we gather that
+
+- "8" is a "module index", here the contracts module, though it isn't explicitly stated
+- "17" is a module-specific error number, here it corresponds to [`ContractTrapped`].
+  This _is_ indicated in the output, though the connection between "17" and `ContractTrapped`
+  is not explicit.
+- "actual_weight" is part of [`PostDispatchInfo`] and indicates the
+  "actual weight consumed by a call or `None` which stands for the worst case static weight".
+
+[fde]: https://github.com/paritytech/substrate/blob/7a79f54a5d92cecba1d9c1e4da71df1e8a6ed91b/primitives/runtime/src/lib.rs#L404
+[`ContractTrapped`]: https://github.com/paritytech/substrate/blob/7a79f54a5d92cecba1d9c1e4da71df1e8a6ed91b/frame/contracts/src/lib.rs#L399
+[`PostDispatchInfo`]: https://github.com/paritytech/substrate/blob/7a79f54a5d92cecba1d9c1e4da71df1e8a6ed91b/frame/support/src/weights.rs#L329
+
+With our "actual weight" looking like a pretty large number,
+our best guess right now is that we just didn't spend enough gas
+to make the call.
+
+For our experiment today
+
+We create a repo just for testing `CallBuilder`:
+
+> https://github.com/Aimeedeer/game-test
+
+Our `CallBuilder` right now looks like:
+
+```rust
+            let return_value: bool = build_call::<DefaultEnvironment>()
+                .callee(program_id) 
+                .gas_limit(50)
+                .transferred_value(10)
+                .exec_input(
+                    ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF]))
+                )
+                .returns::<ReturnType<bool>>()
+                .fire()
+                .unwrap();
+```
+
+The `program_id` is the `AccountId` of the flipper contract,
+provided as an argument to the caller.
+The selector is one that we've given to the flipper's `get`
+method with the `selector` attribute.
+
+When we run our contract we see 
+
+```
+2021-01-16 15:03:42.007 DEBUG tokio-runtime-worker runtime:DispatchError
+2021-01-16 15:03:42.007 DEBUG tokio-runtime-worker runtime:8
+2021-01-16 15:03:42.007 DEBUG tokio-runtime-worker runtime:6
+2021-01-16 15:03:42.007 DEBUG tokio-runtime-worker runtime:OutOfGas
+2021-01-16 15:03:42.007 DEBUG tokio-runtime-worker runtime:PostInfo:
+2021-01-16 15:03:42.007 DEBUG tokio-runtime-worker runtime:actual_weight=
+2021-01-16 15:03:42.007 DEBUG tokio-runtime-worker runtime:50000000
+2021-01-16 15:03:42.007 DEBUG tokio-runtime-worker runtime:pays_fee=
+2021-01-16 15:03:42.007 DEBUG tokio-runtime-worker runtime:Yes
+```
+
+Hey!
+
+This is a different error: now we're `OutOfGas`, not `ContractTrapped`.
+
+And `actual_weight` looks suspicious:
+it is 50 million;
+and our call builder set the gas limit to "50".
+Is `gas_limit` specified in millions?
+
+After some experimentation the answer seems to be "no".
+and these two numbers are not directly connected,
+and we were putting some number beginning with "5" as
+the gas limit in canvas-ui.
+
+We have become completely baffled by how units are specified
+in various places in the code and UI.
+Parts of the code say the units are "Unit",
+like when specifying the amount paid to a contract;
+parts say "M",
+like when specifying the gas paid to run a contract,
+which we assume is a million units;
+but units don't seem to be the actual underlying integer number of units,
+since units are divisible to some much smaller number.
+
+We think we are not providing enough gas to the call builder
+and increase that number;
+we trying increasing the gas we provide to the callee
+when invoking it in the canvas-ui.
+No matter what we do it's `OutOfGas` or `ContractTrapped`.
+
+We think maybe our calling account doesn't have enough
+"units" to execute the contract,
+so we transfer all of the money in the ALICE, ALICE_STASH,
+and BOB_STASH accounts to BOB, and BOB still can't seem to
+get the contract to execute successfully.
+
+I ask some questions in the ink matrix channel,
+and I feel extremely frustrated.
+
+> Every combination of attempts I make results in either an "OutOfGas" or "ContractTrapped" error
+
+> We're very confused about units and gas and weight. How many underlying integer units are in a "unit" (how divisible is a unit)? Does "Max Gas Allowed (M)" mean the amount of millions of "unit"s payed from the caller to run the contract?
+
+> When our default devnet accounts say alice has "1,152" "units" does that man she doesn't have the millions of gas necessary to execute a contract?
+
+Robin responds:
+
+> To clarify: cross-contract calls are possible using the CallBuilder API that should ideally not be used since it is a rather low-level abraction API. Instead users should try using the interfaces allowed for by the ink_lang macros.
+
+> Users generally won't need to use the CallBuilder API for their everyday smart contracts; it is only really required for niche use cases that you can inspect in our multi_sig example contract.
+
+> The cross-chain calling is something completely different and requires support in lower-levels of abstraction than ink! itself.
+
+> I am sorry to hear about your confusing user experiences with the CallBuilder API. Answering the question "how much gas is enough?" isn't easy since it depends on the chain, its configuration and also on which version of Substrate it is based (defaults). E.g. for the Canvas network we resolved that approx 5 CANs should be sufficient to operate smart contracts for a week on our chain. The Alice test account normally has plenty of funds and will likely not require any more if the chain configuration for gas prices is sane.
+
+This doesn't quite answer most of my questions,
+besides asserting that the default accounts should have enough "units" to pay for gas.
+I still don't have a clue how divisible units are or whether gas is paid in millions.
+And if I'm not supposed to use `CallBuilder` to make cross-contract calls,
+then I don't know what I am supposed to use instead.
+
+I ask:
+
+> @Robin I don't see in ink_lang how to call a cross-contract method for contracts that I don't a-priori have the implementation for. I know the signature of the method I want to call, and the account id of the contract i want to call, but don't know the concrete interface. Is there a way to make that call without callbuilder?
+
+During this time we do figure out one thing we were doing wrong:
+we were calling `unwrap` on the results of executing our cross-contract call,
+and _that_ was what was triggering the `ContractTrapped` error.
+When we stopped unwrapping and printed the result we could see
+that the call was returning a `Err(Decode(Error))`.
+
+In the meantime I decide to debug-log _everything_ in the environment I can to try to understand
+what units are what,
+and how the numbers I input in canvas-ui translate to the numbers my code sees.
+
+I try to do this in the caller's method:
+
+```rust
+ink_env::debug_println(&format!("env: {:?}", self.env()));
+ink_env::debug_println(&format!("weight_to_fee(gas_left): {}", self.env().weight_to_fee(self.env().gas_left() as _)));
+```
+
+Just dump the environment.
+When I try to upload this to the chain the UI reports an error, and the log says
+
+```
+2021-01-16 22:29:48.038  DEBUG tokio-runtime-worker runtime:DispatchError                                                                                                             2021-01-16 22:29:48.038  DEBUG tokio-runtime-worker runtime:Invalid module for imported function
+2021-01-16 22:29:48.038  DEBUG tokio-runtime-worker runtime:PostInfo:                                                                                                                 2021-01-16 22:29:48.038  DEBUG tokio-runtime-worker runtime:actual_weight=
+2021-01-16 22:29:48.038  DEBUG tokio-runtime-worker runtime:max-weight
+2021-01-16 22:29:48.039  DEBUG tokio-runtime-worker runtime:pays_fee=
+2021-01-16 22:29:48.039  DEBUG tokio-runtime-worker runtime:Yes
+```
+
+Further experiments with logging the environment don't exhibit this error,
+so I do some work reducing this error.
+I create a contract that consists only of this:
+
+```rust
+    #[ink(storage)]
+    pub struct Game { }
+
+    impl Game {
+        #[ink(constructor)]
+        pub fn default() -> Self {
+            Game { }
+        }
+
+        #[ink(message)]
+        pub fn run_game_test(&mut self) {
+            ink_env::debug_println(&format!("env: {:?}", self.env()));
+            ink_env::debug_println(&format!("weight_to_fee(gas_left): {}", self.env().weight_to_fee(self.env().gas_left() as _)));
+        }
+    }
+```
+
+It can't be uploaded. Doing so results in the above `DispatchError`.
+
+If I remove the _second_ `debug_println` I can upload and execute this contract.
+So this method now is doing nothing but 
+
+```rust
+            ink_env::debug_println(&format!("env: {:?}", self.env()));
+```
+
+It logs
+
+```
+DEBUG tokio-runtime-worker runtime:env: EnvAccess
+```
+
+So not useful.
+
+Changing the method to do only
+
+```rust
+            ink_env::debug_println(&format!("weight_to_fee(gas_left): {}", self.env().weight_to_fee(self.env().gas_left() as _)));
+```
+
+Results in a contract that again can't be uploaded.
+
+Anyway, I'm going to move on and continue trying to log whatever bits of the environment I can,
+in our original contract method.
+
+I try to log just about every accessor on `self.env()`,
+and the only one that results in a contract that successfully uploads is `self.env().caller()`.
+Once again I am completely baffled.
+Clearly I am doing something wrong because this is just broken.
+
+During all this I note repeatedly that today the deployed canvas-ui's icons are all missing,
+replaced by those replacement unicode number filler characters.
+It's getting a bit annoying.
+
+So much brokenness.
+It's super frustrating.
+
+I make a note that some of these things are probably things _I_ can help fix,
+at some point,
+once I feel like I have an understanding of how things are supposed to work.
+Right now though I don't know what I don't know,
+and am just flailing around,
+feeling like nothing works.
+
+Anyway today I went backwards,
+and am completely fed up.
+
+So that's it.
+
 
 
 
@@ -484,3 +854,22 @@ I am going to continue trying though,
 and hoping for a moment of enlightenment,
 where it all feels right,
 and where the fun begins.
+
+
+## TODO
+
+- tips
+  - installing tools
+    - canvas-node
+    - cargo-contract
+    - canvas-ui
+    - subkey
+- docs.rs!
+- uploading and running contracts via web ui sucks
+
+Since last hacking on canvas,
+I've installed the polkadot.js extension to Brave.
+Now when I navigate to canvas-ui,
+I get asked by the extension to approve the UI,
+and whether I do or don't,
+I can't connect to the local devnet.
