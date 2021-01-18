@@ -30,12 +30,14 @@ and some concluding thoughts.
 [plokadot.js]: https://github.com/polkadot-js
 
 - [Our project][#our-project]
-- [Terminology][#terminology]
+  - [Terminology][#terminology]
 - [Implementing the contract][#implementing-the-contract]
   - [Debugging cross-contract calls][#debugging-cross-contract-calls]
   - [But first, updating our tools][#but-first-updating-our-tools]
   - [And then debugging cross-contract calls][#and-then-debugging-cross-contract-calls]
-  - [Another try at cross-contract lass with `CallBuilder`][#another-try-at-cross-contract-calls-with-callbuilder]
+  - [Another try at cross-contract calls with `CallBuilder`][#another-try-at-cross-contract-calls-with-callbuilder]
+  - [Wait what's this? Some weird new issue!][#wait-whats-this-some-weird-new-issue]
+  - [Another try at cross-contract calls with `CallBuilder`, take 2][#another-try-at-cross-contract-calls-with-callbuilder-take-2]
 - [Connecting to our contract with polkadot-js][#connecting-to-our-contract-with-polkadot-js]
 - [Some thoughts][#some-thoughts]
   - [First, some hopefulness][#first-some-hopefulness]
@@ -45,6 +47,17 @@ and some concluding thoughts.
 
 
 ## Our project
+
+
+## Terminology
+
+### Substrate terms
+
+### Game terms
+
+- _Game contract_
+- _Player account_
+- _Player level contract_
 
 
 ## Implementing the contract
@@ -350,6 +363,8 @@ It works. I have updated tools.
 Enough procrastinating; time to solve problems.
 
 
+
+
 ### And then debugging cross-contract calls
 
 What happens when we try to call a method via `CallBuilder` is
@@ -606,11 +621,117 @@ and that will just make the gas limit unlimited.
 That will remove one of the hurdles we've had during development &mdash;
 figuring out how much gas to provide in the canvas-ui.
 
-TODO
+
+### Wait what's this? Some weird new issue!
+
+I try to run `cargo +nightly contract build` on our game contract,
+and it fails like this:
+
+```
+ERROR: error parsing LLVM's version: too many version components
+
+Caused by:
+    too many version components
+```
+
+This is super annoying.
+It seems to be coming from `cargo-contract`,
+as just running `cargo +nightly build`
+doesn't trigger it.
+
+For reference I am running these versions of these tools:
+
+```
+$ rustc +nightly --version
+rustc 1.51.0-nightly (4253153db 2021-01-17)
+$ cargo contract --version
+cargo-contract 0.8.0
+```
+
+I notice that `cargo-contract` only reports a version number,
+and I _definitely_ installed it from source,
+so knowing the exact commit would help.
+Something `cargo-contract` could add to its version output,
+at least when building from source.
+Though I don't know how common it is for programs that aren't
+`rustc` to include their commit hash;
+and once `cargo-contract` is mature I wouldn't expect many people
+to be installing from the master branch.
+
+Ah, now I notice that I have updated my nightly toolchain
+since the last time I hacked on this project.
+So something seems to have changed in how Rust's
+LLVM version is reported.
+
+While super annoying _right now_,
+this kind of thing is not terribly uncommon to run into
+when working with Rust,
+especially nightly Rust.
+I'm wondering though if whatever is happening here
+to break `cargo-contract` is a regression in Rust
+that needs to be reported.
+
+I don't want to debug this!
+But I think I should!
+
+I _could_ try to just upgrade cargo-contract
+and see if somebody else has fixed the problem,
+but I _really_ think the regression should be
+reported to upstream Rust.
+
+I search the Rust issue tracker and don't see
+any reports that sound related.
+
+Looking at the git log from my current HEAD to origin/master
+I see commits that look like they probably fix this issue:
+
+```
+$ git shortlog HEAD..origin/master
+Andrew Jones (1):
+      2021 file headers (#138)
+
+dependabot[bot] (3):
+      Bump async-std from 1.8.0 to 1.9.0 (#156)
+      Bump rustc_version from 0.3.2 to 0.3.3 (#155)
+      Bump cargo_metadata from 0.12.2 to 0.12.3 (#154)
+```
+
+Ok, there's the [fixed issue in `rustc_version`][rcv].
+
+[rcv]: https://github.com/Kimundi/rustc-version-rs/issues/37
+
+This is a nightly-only problem,
+as only Rust nightly reports the LLVM version,
+so there's no upstream bug to report.
+
+```
+$ rustc -vV
+rustc 1.49.0 (e1884a8e3 2020-12-29)
+binary: rustc
+commit-hash: e1884a8e3c3e813aada8254edfa120e85bf5ffca
+commit-date: 2020-12-29
+host: x86_64-unknown-linux-gnu
+release: 1.49.0
+
+$ rustc +nightly -vV
+rustc 1.51.0-nightly (4253153db 2021-01-17)
+binary: rustc
+commit-hash: 4253153db205251f72ea4493687a31e04a2a8ca0
+commit-date: 2021-01-17
+host: x86_64-unknown-linux-gnu
+release: 1.51.0-nightly
+LLVM version: 11.0.1
+```
+
+I install the latest master version of `cargo-contract`
+and go on with my life:
+
+```
+cargo install --path .
+```
 
 
-
-
+### Another try at cross-contract calls with `CallBuilder`, take 2
 
 
 
