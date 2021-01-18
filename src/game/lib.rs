@@ -18,21 +18,21 @@ mod game {
     
     #[ink(storage)]
     pub struct Game {
-        game_accounts: HashMap<AccountId, GameAccount>,
+        player_accounts: HashMap<AccountId, PlayerAccount>,
     }
 
     #[derive(Debug, Clone, scale::Encode, scale::Decode, ink_storage_derive::PackedLayout, ink_storage_derive::SpreadLayout)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))] // todo: what is this?
-    pub struct GameAccount {
+    pub struct PlayerAccount {
         level: u32,
-        level_programs: BTreeMap<u32, AccountId>,
+        level_contracts: BTreeMap<u32, AccountId>,
     }
 
-    impl GameAccount {
+    impl PlayerAccount {
         pub fn default() -> Self {
-            GameAccount {
+            PlayerAccount {
                 level: 0,
-                level_programs: BTreeMap::new(),
+                level_contracts: BTreeMap::new(),
             }
         }
     }
@@ -53,14 +53,14 @@ mod game {
         #[ink(constructor)]
         pub fn default() -> Self {
             Game {
-                game_accounts: HashMap::new(),
+                player_accounts: HashMap::new(),
             }
         }
 
         /// Query if the caller has an account
         #[ink(message)]
-        pub fn have_game_account(&self, account: AccountId) -> bool {
-            self.game_accounts.contains_key(&account)
+        pub fn have_player_account(&self, account: AccountId) -> bool {
+            self.player_accounts.contains_key(&account)
         }
 
         /// Create an account for the caller
@@ -70,7 +70,7 @@ mod game {
         /// - The account exists.
         /// - The paid amount is insufficient.
         #[ink(message, payable)]
-        pub fn create_game_account(&mut self) -> Result<GameAccount, Error> {
+        pub fn create_player_account(&mut self) -> Result<PlayerAccount, Error> {
             let caller = self.env().caller();
             let balance = self.env().transferred_balance();
 
@@ -79,7 +79,7 @@ mod game {
             if balance < 1000 {
                 ink_env::debug_println("Your balance isn't enough for creating your captain");
                 Err(Error::InsufficiantBalance)
-            } else if self.have_game_account(caller) {
+            } else if self.have_player_account(caller) {
                 Err(Error::AccountExists)
             } else {
                 self.create_a_captain(caller)
@@ -92,8 +92,8 @@ mod game {
         ///
         /// - The account doesn't exist.
         #[ink(message)]
-        pub fn get_game_account(&self, account: AccountId) -> Result<GameAccount, Error> {
-            self.game_accounts.get(&account).cloned().ok_or(Error::AccountNotExists)
+        pub fn get_player_account(&self, account: AccountId) -> Result<PlayerAccount, Error> {
+            self.player_accounts.get(&account).cloned().ok_or(Error::AccountNotExists)
         }
 
         /// Submit a program for a level puzzle
@@ -104,14 +104,14 @@ mod game {
         /// - Program fails verification.
         /// - Program account doesn't exist.
         #[ink(message, payable)]
-        pub fn submit_level(&mut self, level: u32, program_id: AccountId) -> Result<AccountId, Error> {
+        pub fn submit_level(&mut self, level: u32, level_contract: AccountId) -> Result<AccountId, Error> {
             // todo: verify transferred balance
             let caller = self.env().caller();
             
-            if let Some(game_account) = self.game_accounts.get_mut(&caller) {
-                let account_current_level = game_account.level;
+            if let Some(player_account) = self.player_accounts.get_mut(&caller) {
+                let account_current_level = player_account.level;
                 if level <= account_current_level {
-                    game_account.level_programs.insert(level, program_id).ok_or(Error::SubmitProgramFailed)
+                    player_account.level_contracts.insert(level, level_contract).ok_or(Error::SubmitProgramFailed)
                 } else {
                     Err(Error::SubmittedGreaterLevel)
                 }
@@ -130,11 +130,11 @@ mod game {
         #[ink(message, payable)]
         pub fn run_level(&mut self, level: u32) -> Result<bool, Error> {
             let caller = self.env().caller();
-            if let Some(game_account) = self.game_accounts.get_mut(&caller) {
-                ink_env::debug_println(&format!("game account: {:?}", game_account));
-                if let Some(program_id) = game_account.level_programs.get(&level) {
-                    ink_env::debug_println(&format!("program id: {:?}", program_id));
-                    dispatch_level(level, program_id.clone())                    
+            if let Some(player_account) = self.player_accounts.get_mut(&caller) {
+                ink_env::debug_println(&format!("game account: {:?}", player_account));
+                if let Some(level_contract) = player_account.level_contracts.get(&level) {
+                    ink_env::debug_println(&format!("program id: {:?}", level_contract));
+                    dispatch_level(level, level_contract.clone())                    
                 } else {
                     Err(Error::ProgramNotExists)
                 }
@@ -165,11 +165,11 @@ mod game {
 
     // Methos support contracts
     impl Game {
-        fn create_a_captain(&mut self, account: AccountId) -> Result<GameAccount, Error> {
-            let new_game_account = GameAccount::default();
+        fn create_a_captain(&mut self, account: AccountId) -> Result<PlayerAccount, Error> {
+            let new_player_account = PlayerAccount::default();
 
-            self.game_accounts.insert(account, new_game_account.clone());
-            Ok(new_game_account)
+            self.player_accounts.insert(account, new_player_account.clone());
+            Ok(new_player_account)
         }
     }
 

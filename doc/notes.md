@@ -51,20 +51,44 @@ and some concluding thoughts.
 
 ## Terminology
 
+The start of every project is filled with an awkward period
+of figuring out what to call things.
+Here are some of the terms used in our game,
+and used in this blog post.
+
 ### Substrate terms
+
+- _Account ID_ - A substrate account.
+  These can represent things, but for our purposes so far
+  they represent the accounts of people and the accounts of contracts.
+  Sometimes referred to abstractly as just "account".
+- _Method selector_ - TODO
 
 ### Game terms
 
-- _Game contract_
-- _Player account_
-- _Player level contract_
+- _Game contract_ - The Substrate / Ink contract that runs the game.
+- _Player account_ - An account within the game belonging to a single player,
+  associated with a Substrate account and the player's game data.
+- _Player level contract_ - The contract submitted by a player
+  to complete a single level in the game. This is sometimes
+  abbreviated as just "level contract" in context.
+- _Player level contract account ID_ - The Substrate account associated with a player level contract.
+  Some of these words may be abbreviated out in context.
+
+Just re-reading this I am struck at the immediate complexity
+of disambiguating these concepts:
+"player level contract account ID"?
+Yeek.
+Maybe I'm overthinging this.
+
+
 
 
 ## Implementing the contract
 
 ink_storage::HashMap doesn't implement Clone.
 
-We try to put an `ink_storage::HashMap` into a custom `GameAccount` struct
+We try to put an `ink_storage::HashMap` into a custom `PlayerAccount` struct
 inside another `ink_storage::HashMap`, inside our `Game` storage type.
 
 Something like
@@ -72,11 +96,11 @@ Something like
 ```rust
     #[ink(storage)]
     pub struct Game {
-        game_accounts: ink_storage::HashMap<AccountId, GameAccount>,
+        player_accounts: ink_storage::HashMap<AccountId, PlayerAccount>,
     }
 
     #[derive(Debug, Clone, scale::Encode, scale::Decode, ink_storage_derive::PackedLayout, ink_storage_derive::SpreadLayout)]
-    pub struct GameAccount {
+    pub struct PlayerAccount {
         level: u32,
         level_programs: ink_storage::HashMap<u32, AccountId>,
     }
@@ -98,11 +122,11 @@ we use a `BTreeMap` instead, like
 ```rust
     #[ink(storage)]
     pub struct Game {
-        game_accounts: ink_storage::HashMap<AccountId, GameAccount>,
+        player_accounts: ink_storage::HashMap<AccountId, PlayerAccount>,
     }
 
     #[derive(Debug, Clone, scale::Encode, scale::Decode, ink_storage_derive::PackedLayout, ink_storage_derive::SpreadLayout)]
-    pub struct GameAccount {
+    pub struct PlayerAccount {
         level: u32,
         level_programs: BTreeMap<u32, AccountId>,
     }
@@ -733,11 +757,266 @@ cargo install --path .
 
 ### Another try at cross-contract calls with `CallBuilder`, take 2
 
+Again,
+we are working [off of a repo][gtr] that just
+contains this reduced problem of calling
+a method in another contract,
+while only knowing the
+callee's account id and
+method selector.
+
+[gtr]: https://github.com/Aimeedeer/game-test
+
+Since last time we tried this,
+I was given some more advice by Robin
+about how to call other contracts.
+This feature of calling another contract by interface
+doesn't exist yet in the ink DSL,
+but should [eventually be possible][dyntrait] through
+`#[ink::trait_definition]`.
+For now what we are trying to do
+by manually manipulating method selectors
+and using the low-lewel `CallBuilder`
+should work &mdash; we just haven't understood how yet.
+
+[dyntrait]: https://github.com/paritytech/ink/issues/631
+
+We've learned two important things recently
+
+- We can just set the `gas_limit` to "0",
+  which means it is unlimited.
+- Our `CallBuilder`'s `fire` method was returning an
+  `Err(Decode(Error))`,
+  that we were unwrapping instead of handling.
+
+So we've fixed both those problems:
+having unlimited gas will let us not worry about
+choosing the correct gas price during development;
+and now our task is to figure out why our call
+is returning a decoding error.
+
+I want to do a few things:
+
+- Look up the `CallBuilder::fire` method and see what
+  errors it returns.
+- Ripgrep the codebase for this `Decode` error we are hitting,
+  try to understand why it happens.
+- Ripgrep the ink codebase for more examples
+  of using `CallBuilder` and see if there are things
+  those examples are doing that we are not.
+
+Here's how we are using `CallBuilder` as of now:
+
+```rust
+let return_value = build_call::<DefaultEnvironment>()
+    .callee(program_id) 
+    .gas_limit(0)
+    .transferred_value(0)
+    .exec_input(
+        ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF]))
+    )
+    .returns::<ReturnType<bool>>()
+    .fire();
+
+ink_env::debug_println(&format!("return value {:?}", return_value));
+```
+
+First up, the [`fire`] method.
+
+Compared to the rest of `CallBuilder`,
+which is very generic,
+this has a simple signature:
+
+```
+pub fn fire(self) -> Result<(), Error>
+```
+
+`Error` here is the [`ink_env::Error`] enum,
+which, as we would hope,
+has the variant we've seen called `Decode`.
+It contains an inner `Error` type that is
+curiously not linked to anything useful in the API docs.
+
+[`fire`]: https://paritytech.github.io/ink/ink_env/call/struct.CallBuilder.html#method.fire
+[`ink_env::Error`]: https://paritytech.github.io/ink/ink_env/enum.Error.html
+
+That probably means it originates from
+somewhere outside of the source tree the docs are being generated from.
+I would guess it comes from a SCALE crate,
+which is responsible for serialization in Substrate.
+But let's not guess,
+let's go look at the ink code.
+
+[Yeah, it's a `scale::Error`][itsascaleerror].
+And from reading the `Cargo.toml` file I see that the `scale` crate
+is [actually called `parity-scale-codec`][apsc].
+
+[itsascaleerror]: https://github.com/paritytech/ink/blob/01f987d7f70b8b1bbc05fe016021d2d77e3ded54/crates/env/src/error.rs#L24
+[apsc]: https://github.com/paritytech/ink/blob/01f987d7f70b8b1bbc05fe016021d2d77e3ded54/crates/env/Cargo.toml#L23
+
+We're going to want to log this error,
+but first let's just look up those docs
+to see what we're in for.
+
+It suddenly occurs to me that I don't know where
+to find the Substrate API docs.
+I know the Ink API docs are self hosted in one place,
+and not on docs.rs.
+All the Substrate docs should be on docs.rs.
+It's just expected by Rust programmers.
+
+I go to the Substrate dev docs place that I know,
+substrate.dev,
+and click the prominent "API Reference" link.
+It leads to yet another URL:
+
+> https://substrate.dev/rustdocs/
+
+Navigating to that URL then redirects to ...
+
+> https://substrate.dev/rustdocs/v2.0.1/sc_service/index.html
+
+Okay... is `sc_service` really the first page
+a user should read about Substrate API docs.
+I don't know enough to say "no",
+but it's definitely not what I'm looking for.
+
+Anyway, I should be able to search for `scale`
+or `parity-scale-codec` in the top search bar.
+
+I search for `scale` and see the top hits:
 
 
+|--|--|
+|sp_runtime::traits::Scale|Multiply and divide by a number that isn't necessarily … |
+|alga::general::ComplexField::scale|Multiplies this complex number by factor.|
+|nalgebra::ComplexField::scale|Multiplies this complex number by factor.|
+|nalgebra::base::Matrix::scale|Multiplies each component of the complex matrix self by …|
+|num_complex::Complex::scale|Multiplies self by the scalar t.|
+|statrs::distribution::Cauchy::scale|Returns the scale of the cauchy distribution|
+|statrs::distribution::Pareto::scale|Returns the scale of the Pareto distribution|
+|statrs::distribution::StudentsT::scale|Returns the scale of the student's t-distribution|
+|statrs::distribution::Weibull::scale|Returns the scale of the weibull distribution|
+|--|--|
 
+Junk.
 
+Searching for `parity-scale-codec` yields no results.
 
+_Searching for `parity_scale_codec` (with underscores) finds the crate._
+
+This one is pretty much Rust's fault,
+not Parity's &mdash;
+crates can have dashes in their names,
+but in code they must be valid Rust identifiers,
+so the dashes are converted to underscores;
+and the code is where the docs originate.
+
+(This one is actually probably _my_ fault &mdash;
+I remember when the Rust team was deciding what characters
+would be valid crate names,
+and I argued hard for the aesthetic benifits of the dash.
+In retrospect,
+I think it's a terrible decision which has resulted
+in tons of accidental complexity.)
+
+Finally,
+after quite a lot of digging we find
+the [`scale::Error` docs][sed]
+
+[sed]: https://substrate.dev/rustdocs/v2.0.1/parity_scale_codec/struct.Error.html
+
+This error doesn't give much useful info:
+it contains one method:
+
+```rust
+pub fn what(&self) -> &'static str
+```
+
+and this method is documented that
+
+> "This function returns an actual error str when running in std environment, but "" on no_std."
+
+As our contract is a no-std environment,
+we can expect to get no further useful info out of this error.
+
+We're going to try to log it anyway and see what it says.
+
+We modify our post-call code to log the error in two ways:
+
+```rust
+match return_value {
+    Err(ink_env::Error::Decode(e)) => {
+        ink_env::debug_println(&format!("e: {:?}", e));
+        ink_env::debug_println(&format!("estr: {}", e.what()));
+    }
+    _ => { }
+}
+```
+
+We expect the `what()` call to return an empty string,
+but _maybe_ debug-printing the error itself will give some
+useful info.
+
+Probably not. Yeah, after reading the implementation of `scale::Error`,
+we're not going to get any useful info out of it.
+Oh well, let's prove it by doing the test.
+
+Holy shit.
+
+The call worked. No error. Our logs say so:
+
+```
+DEBUG tokio-runtime-worker runtime:return value Ok(false)
+```
+
+WTF did we do differently this time!?
+
+I stash the changes I've made to the contract today,
+and try again,
+using a setup that failed for us many,
+many times.
+The only changes should be that I have a different
+Rust nightly compiler,
+and that should be irrelevant.
+
+The old contract succeeds.
+Very unexpectedly.
+
+Yay?
+
+I mean, "nooooo".
+
+This is the worst kind of success.
+Literal days of work,
+spanning weeks,
+and we don't know how we fixed our bug.
+
+I'm tempted to say we learned _nothing_,
+but that's not true.
+We did learn quite a few things,
+_but not what we did wrong_.
+
+This is a tableflip moment.
+
+I have Aimee reproduce the experiment,
+with our _old_ code,
+that has also _failed for her_,
+many times.
+
+After like 10 minutes of setup,
+in which canvus-ui fails us in at least 2 new ways (**),
+she executes our test game contract.
+
+I cross my fingers,
+but I don't even know what I'm hoping for:
+for the contract to succeed,
+or for the contract to fail again
+so we can continue to debug what we did wrong.
+
+The old contract succeeds again,
+whether I run it,
+whether she runs it.
 
 
 ## Connecting to our contract with polkadot-js
@@ -1063,3 +1342,40 @@ Now when I navigate to canvas-ui,
 I get asked by the extension to approve the UI,
 and whether I do or don't,
 I can't connect to the local devnet.
+
+- Live contract already exists error
+  doesn't tell us the account ID of that contract,
+  so we can't recover it.
+- Describe our workflow for testing our contract.
+
+I am pretty confident I am not dumb,
+that I am a "good" programmer,
+especially in Rust.
+
+That I have run into _so many_ problems
+_just getting started_ is _a bad sign_.
+
+
+
+(**)
+
+"canvas-ui fails us in at least two new ways":
+
+1) During contract upload,
+   the status spinner spun forever.
+   Re-navigating to the "upload" tab
+   revealed that the contract had been successfully uploaded.
+   After this, the "deploy" tab showed the same contract uploaded
+   twice, both with the same code hash.
+
+2) We told canvas-ui to "forget" a deployed contract,
+   with the intent of re-deploying it.
+   Upon attempted redeployment we received an error,
+   and the canvas-node logs said something along the lines
+   of "live contract already exists".
+   Unfortunately we did not have that contract's account id,
+   the error message didn't tell us,
+   the polkadot.js/app explorer couldn't tell us that contract's
+   account id (presumably because it wasn't running at the time
+   the event was dispatched);
+   so we didn't know what else to do but restart our devnet.
