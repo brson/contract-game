@@ -1,9 +1,53 @@
 # 2021/01/01
 
-## Our prototype game contract
+# Further adventures with parity's `ink!`
+
+During my [last series of bloggings][subblog] about [Substrate],
+I intended to explore [`ink!`],
+Parity's DSL library for writing smart contracts in Rust.
+Those posts though mostly ended up being about setting up
+the appropriate development environment,
+and my failures along the way.
+
+I remain though interested in learning Substrate,
+and in particular smart contract programming in Rust on Substrate.
+So in the time since that last exploration,
+[Aimee] and I have envisioned a small project
+to hack on that will guide us to learn more about
+Substrate/Ink development.
+
+This report will be about our experiences in the
+first few weeks of implementing that project.
+It is broadly divided into three sections:
+contract implementation with Ink,
+client implementation with [polkadot.js],
+and some concluding thoughts.
 
 
-## Implementing our contract
+[Substrate]: https://substrate.dev
+[subblog]: https://brson.github.io/2020/12/03/substrate-and-ink-part-1
+[`ink!`]: https://github.com/paritytech/ink
+[plokadot.js]: https://github.com/polkadot-js
+
+- [Our project][#our-project]
+- [Terminology][#terminology]
+- [Implementing the contract][#implementing-the-contract]
+  - [Debugging cross-contract calls][#debugging-cross-contract-calls]
+  - [But first, updating our tools][#but-first-updating-our-tools]
+  - [And then debugging cross-contract calls][#and-then-debugging-cross-contract-calls]
+  - [Another try at cross-contract lass with `CallBuilder`][#another-try-at-cross-contract-calls-with-callbuilder]
+- [Connecting to our contract with polkadot-js][#connecting-to-our-contract-with-polkadot-js]
+- [Some thoughts][#some-thoughts]
+  - [First, some hopefulness][#first-some-hopefulness]
+  - [Next, some venting][#next-some-venting]
+  - [It's ok, I'm learning][#its-ok-im-learning]
+
+
+
+## Our project
+
+
+## Implementing the contract
 
 ink_storage::HashMap doesn't implement Clone.
 
@@ -190,7 +234,7 @@ to have any clue what the hell is going on.
 
 
 
-## Debugging cross-contract calls
+### Debugging cross-contract calls
 
 We ran into our first big blocker:
 we can't figure out how to call another contract via interface.
@@ -544,9 +588,33 @@ and am just flailing around,
 feeling like nothing works.
 
 Anyway today I went backwards,
-and am completely fed up.
+and am fed up.
 
 So that's it.
+Time for a break.
+
+
+### Another try at cross-contract calls with `CallBuilder`
+
+This will be our 4th attempt to successfully call another conract with `CallBuilder`.
+
+In the meantime Robin responded to more of my questions in chat.
+
+From that I learned that I should definitely be able to do what I'm attempting,
+but more importantly that I can set the gas limit to 0 in a cross-contract call,
+and that will just make the gas limit unlimited.
+That will remove one of the hurdles we've had during development &mdash;
+figuring out how much gas to provide in the canvas-ui.
+
+TODO
+
+
+
+
+
+
+
+
 
 
 
@@ -742,8 +810,9 @@ Yup.
 Somebody tell me what I'm doing wrong. Please.
 
 
+## Some thoughts
 
-## First, some hopefulness
+### First, some hopefulness
 
 As I learn about Substrate and the corners of its ecosystem,
 I do feel a bit giddy.
@@ -766,7 +835,7 @@ on one powerful toolkit.
 It seems like it could be fun to be a part of.
 
 
-## Next, some venting
+### Next, some venting
 
 Right now though, it is not fun.
 Writing applications on blockchains is not fun,
@@ -830,7 +899,7 @@ and then stop evolving.
 It's an entire universe of 90% solutions.
 
 
-## It's ok - I'm learning
+### It's ok - I'm learning
 
 My partner is learning to program right now,
 and I am patiently watching her go through all the difficulties
