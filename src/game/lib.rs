@@ -105,6 +105,7 @@ mod game {
             if let Some(player_account) = self.player_accounts.get_mut(&caller) {
                 let account_current_level = player_account.level;
                 if level <= account_current_level {
+                    ink_env::debug_println(&format!("insert level {}, and contract {:?}", level, level_contract));
                     player_account.level_contracts.insert(level, level_contract).ok_or(Error::SubmitLevelContractFailed)
                 } else {
                     Err(Error::SubmittedGreaterLevel)
@@ -143,15 +144,15 @@ mod game {
     impl Game {
         fn create_a_captain(&mut self, account: AccountId) -> Result<PlayerAccount, Error> {
             let new_player_account = PlayerAccount::default();
-
             self.player_accounts.insert(account, new_player_account.clone());
+            ink_env::debug_println(&format!("new player account {:?}", new_player_account));
+
             Ok(new_player_account)
         }
     }
 
     fn dispatch_level(level: u32, level_contract: AccountId) -> Result<bool, Error> {
-
-        ink_env::debug_println(&format!("calling flip on {:?}", level_contract));
+        ink_env::debug_println(&format!("dispatch level: calling flip on {:?}", level_contract));
 
         let return_value = build_call::<DefaultEnvironment>()
             .callee(level_contract) 
