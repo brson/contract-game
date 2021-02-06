@@ -41,12 +41,14 @@ function initAccountPage() {
     let gameAccountLevelSpan = document.getElementById("account-level");
 
     nodeConnectButton.disabled = false;
+    nodeEndpointInput.disabled = false;
 
     nodeConnectButton.addEventListener("click", async (event) => {
         let nodeEndpoint = nodeEndpointInput.value;
 
         setInnerMessageNeutral(nodeStatusSpan, "waiting");
         nodeConnectButton.disabled = true;
+        nodeEndpointInput.disabled = true;
         try {
             let api = await nodeConnect(nodeEndpoint);
 
@@ -64,6 +66,7 @@ function initAccountPage() {
         } catch (error) {
             setInnerMessageFail(nodeStatusSpan, error);
             nodeConnectButton.disabled = false;
+            nodeEndpointInput.disabled = false;
             return;
         }
     });
