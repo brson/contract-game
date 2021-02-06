@@ -127,6 +127,7 @@ mod game {
             let caller = self.env().caller();
             if let Some(player_account) = self.player_accounts.get_mut(&caller) {
                 ink_env::debug_println(&format!("game account: {:?}", player_account));
+
                 if let Some(level_contract) = player_account.level_contracts.get(&level) {
                     ink_env::debug_println(&format!("program id: {:?}", level_contract));
                     dispatch_level(level, level_contract.clone())                    
@@ -152,32 +153,22 @@ mod game {
     }
 
     fn dispatch_level(level: u32, level_contract: AccountId) -> Result<bool, Error> {
-        ink_env::debug_println(&format!("dispatch level: calling flip on {:?}", level_contract));
+        ink_env::debug_println(&format!("dispatch level: {}, calling contract: {:?}", level, level_contract));
 
-        let return_value = build_call::<DefaultEnvironment>()
-            .callee(level_contract) 
-            .exec_input(
-                // flip method
-                ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xEF]))
-            )
-            .returns::<ReturnType<()>>()
-            .fire();
-
-        match return_value {
-            Ok(_) => { },
-            Err(e) => {
-                ink_env::debug_println(&format!("flip method call failed: {:?}", e));
-                return Err(Error::LevelContractCallFailed);
-            }
+        let selector;
+        match level {
+            0 => selector = [0xDE, 0xAD, 0xBE, 0xEF],
+            1 => selector = [0xDE, 0xAD, 0xEE, 0xEE],
+            _ => unreachable!(),
         }
-
-        ink_env::debug_println(&format!("calling get on {:?}", level_contract));
+        
+        ink_env::debug_println(&format!("contract selector: {:?}", &selector));
 
         let return_value = build_call::<DefaultEnvironment>()
             .callee(level_contract)
             .exec_input(
-                // get method
-                ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF]))
+                ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xEF]))
+                // ExecutionInput::new(Selector::new(selector))  
             )
             .returns::<ReturnType<bool>>()
             .fire();
