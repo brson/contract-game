@@ -24,9 +24,7 @@ function loadApis() {
 }
 
 function initPage() {
-    if (document.getElementById("account-page") != null) {
-        initAccountPage();
-    }
+    initAccountPage();
 }
 
 function initAccountPage() {
@@ -43,16 +41,28 @@ function initAccountPage() {
 
     nodeConnectButton.disabled = false;
 
-    nodeConnectButton.addEventListener("click", (event) => {
-        nodeConnect()
-            .then((msg) => {
-                nodeStatusSpan.innerText = msg;
-                nodeConnectButton.disabled = true;
-            })
-            .catch((error) => {
-                nodeStatusSpan.innerText = error;
-                nodeConnectButton.disabled = true;
-            });
+    nodeConnectButton.addEventListener("click", async (event) => {
+        setInnerMessageNeutral(nodeStatusSpan, "waiting");
+        nodeConnectButton.disabled = true;
+        try {
+            let api = await nodeConnect();
+
+            console.log("api:");
+            console.log(api);
+
+            let { chain, nodeName, nodeVersion }
+                = await getChainMetadata(api);
+
+            let msg = `Connected to ${chain} using ${nodeName} v${nodeVersion}`;
+            console.log(msg);
+
+            setInnerMessageSuccess(nodeStatusSpan, msg);
+
+        } catch (error) {
+            setInnerMessageFail(nodeStatusSpan, error);
+            nodeConnectButton.disabled = false;
+            return;
+        }
     });
 }
 
@@ -63,16 +73,45 @@ async function nodeConnect() {
     const provider = new polkadot.WsProvider(addr);
     const api = await polkadot.ApiPromise.create({ provider });
 
+    return api;
+}
+
+async function getChainMetadata(api) {
+
     const [chain, nodeName, nodeVersion] = await Promise.all([
         api.rpc.system.chain(),
         api.rpc.system.name(),
         api.rpc.system.version()
     ]);
 
-    let msg = `Connected to ${chain} using ${nodeName} v${nodeVersion}`;
-    console.log(msg);
-    return msg;
+    return {
+        chain,
+        nodeName,
+        nodeVersion
+    }
 }
+
+function setInnerMessageSuccess(elt, msg) {
+    elt.innerText = msg;
+    elt.classList.remove("msg-fail");
+    elt.classList.add("msg-success");
+}
+
+function setInnerMessageFail(elt, msg) {
+    elt.innerText = msg;
+    elt.classList.remove("msg-success");
+    elt.classList.add("msg-fail");
+}
+
+function setInnerMessageNeutral(elt, msg) {
+    elt.innerText = msg;
+    elt.classList.remove("msg-success");
+    elt.classList.remove("msg-fail");
+}
+
+
+
+
 
 
 

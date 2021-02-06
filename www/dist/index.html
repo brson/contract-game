@@ -7,12 +7,31 @@
 
   <link href="css/style.css" rel="stylesheet">
 
+  <script src="js/polyfill.js"></script>
+  <script src="js/bundle.js" async></script>
+  <script src="js/script.js" type="module" async></script>
 </head>
 
-<ul>
-  <li><a href="intro.html">Introduction</a>
-  <li><a href="account.html">Account Management</a>
-  <li><a href="level-01.html">Level 1</a>
-</ul>
+<div id="account-section">
+
+  <p>Node status: <span id="node-status">disconnected</span></p>
+
+  <p><button id="node-connect" type="button" disabled>Connect to node</button></p>
+
+  <!-- -->
+
+  <p>Keyring status: <span id="keyring-status">disconnected</span></p>
+
+  <p>Account ID: <input id="account-id" value="unknown"></input></p>
+
+  <p><button id="keyring-connect" type="button" disabled>Connect to keyring</button></p>
+
+  <!-- -->
+
+  <p><button id="create-game-account" type="button" disabled>Create game account</button></p>
+
+  <p>Level: <span id="game-account-level">unknown</span></p>
+
+</div>
 
 </html>
