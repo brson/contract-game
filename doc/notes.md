@@ -1019,6 +1019,58 @@ whether I run it,
 whether she runs it.
 
 
+## Let's just get to the finish line
+
+Ok, after that last experience we took a multi-week break,
+and [tried out Dfinity][dft].
+
+[dft]: https://brson.github.io/2021/01/30/dfinity-impressions
+
+Now, we are determined to make a final push to complete this project's prototype.
+
+With our game contract able to call player level contracts via their account ID's and method selectors,
+today we are going to try to add level progression,
+where completing one level opens up the next level.
+
+Since it has been a while,
+I am again going to update my tools.
+
+- `canvas-ui` - The frontend. I find that I am not using my own build of this program,
+  but instead of the [hosted version][hcui]. Still, I keep this updated. I make a note
+  to try using my own build today.
+- `cargo-contract` - This time I build it with `--features=extrensics`, with the goal
+  of attempting to deploy from the command-line, as the many-step process of setting
+  up our contracts for testing is becoming a major source of confusion and frustration.
+  It fails to build with `cargo install` initially, until I remember that `install`
+  needs to be paired with `--locked` so that the lockfile is used.
+  Even with `--locked` the build fails in a different way.
+  This is commit 2f7b165e464b8f494c27095488d41da416d8f41e.
+- `canvas-node` - Again, there have been no changes to `canvas-node` since November.
+  I decide that I want to get the benefits of any substrate changes, so I run
+  `cargo update` to force upgrades of the dependencies. It doesn't build,
+  so I just keep using an ancient build.
+
+[hcui]: https://paritytech.github.io/canvas-ui/#/
+
+
+
+
+
+
+
+
+## The many-step error-prone build-test-deploy cycle
+
+TODO
+
+
+
+
+
+
+
+
+
 ## Connecting to our contract with polkadot-js
 
 It's strange that the JS compononts are "polkadot"-branded,
@@ -1210,6 +1262,90 @@ Yup.
 Somebody tell me what I'm doing wrong. Please.
 
 
+
+## Next attempt to get a simple UI working
+
+Ok, this is at least a month after the last attempt at hacking on the UI.
+In the meantime, we spent a lot of time debugging our contract,
+and also did that experiment with Dfinity.
+
+Today my goal is to execute transactions in our contract using
+the test accounts.
+
+My setup is wonky, so I better describe it:
+
+I am just using webpack to give me a bundle of the JS libraries I need,
+and everything else is just a static website, served by `yarn serve`.
+I am doing this because I like and understand static websites:
+I want to be in the web platform world, not the npm/yarn/node world.
+
+[Here is the source][jssrc] as of the current commit.
+
+[jssrc]: https://github.com/brson/contract-game/tree/23169f71f64499920b5f38792e9f66e579f03cd2/www
+
+My webpacked JS file, under `src/index.js` just contains this:
+
+```JavaScript
+"use strict";
+
+import { ApiPromise, WsProvider } from "@polkadot/api";
+import { Keyring } from "@polkadot/keyring";
+import { CodePromise, BlueprintPromise, ContractPromise, Abi } from "@polkadot/api-contract";
+
+document.polkadotApiBundle = {
+    ApiPromise,
+    WsProvider,
+    Keyring,
+    CodePromise,
+    BlueprintPromise,
+    ContractPromise,
+    Abi
+};
+```
+
+So this is collecting all the node-built APIs I want and stuffing them into `document.polkadotApiBUndle`.
+
+All my other code is in the `dist` directory:
+that webpacked bundle becomes `dist/js/bundle.js`,
+and everything else in `dist` is static hand-written code.
+
+This is a single-page app that lives in `index.html`,
+and it is a single-page app because,
+for now at least,
+I don't want to worry about maintaining account information across pages,
+and reconnecting to the substrate node between pages.
+
+The script loading for this page looks like this:
+
+```html
+  <script src="js/polyfill.js"></script>
+  <script src="js/bundle.js" async></script>
+  <script src="js/script.js" type="module" async></script>
+```
+
+That first synchronously-loaded `polyfill.js` is the hack I made last time:
+
+```JavaScript
+"use strict";
+
+let global = window;
+let process = {
+    "versions": null
+};
+```
+
+Other node polyfills are specified in my `webpack.config.js`,
+and I figured out how to do them by tedious googling of each;
+but these two tiny fills I couldn't find a real solution for,
+so just wrote these definitions myself as the running script threw errors.
+
+My application code is in `js/script.js`.
+I made it a module so that I can freely use globals inside of it.
+Otherwise I don't know much about JavaScript modules.
+
+
+
+
 ## Some thoughts
 
 ### First, some hopefulness
@@ -1379,3 +1515,8 @@ _just getting started_ is _a bad sign_.
    account id (presumably because it wasn't running at the time
    the event was dispatched);
    so we didn't know what else to do but restart our devnet.
+
+
+## Tips
+
+- `canvas-node --dev --tmp -lerror,runtime=debug`
