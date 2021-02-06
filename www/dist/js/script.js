@@ -29,23 +29,28 @@ function initPage() {
 
 function initAccountPage() {
     let nodeStatusSpan = document.getElementById("node-status");
+    let nodeEndpointInput = document.getElementById("node-endpoint");
     let nodeConnectButton = document.getElementById("node-connect");
 
     let keyringStatusSpan = document.getElementById("wallet-status");
     let walletConnectButton = document.getElementById("wallet-connect");
-    let accountIdSpan = document.getElementById("account-id");
+    let accountIdInput = document.getElementById("account-id");
     let accountStatusSpan = document.getElementById("account-status");
 
     let createGameAccountButton = document.getElementById("create-game-account");
     let gameAccountLevelSpan = document.getElementById("account-level");
 
     nodeConnectButton.disabled = false;
+    nodeEndpointInput.disabled = false;
 
     nodeConnectButton.addEventListener("click", async (event) => {
+        let nodeEndpoint = nodeEndpointInput.value;
+
         setInnerMessageNeutral(nodeStatusSpan, "waiting");
         nodeConnectButton.disabled = true;
+        nodeEndpointInput.disabled = true;
         try {
-            let api = await nodeConnect();
+            let api = await nodeConnect(nodeEndpoint);
 
             console.log("api:");
             console.log(api);
@@ -61,13 +66,13 @@ function initAccountPage() {
         } catch (error) {
             setInnerMessageFail(nodeStatusSpan, error);
             nodeConnectButton.disabled = false;
+            nodeEndpointInput.disabled = false;
             return;
         }
     });
 }
 
-async function nodeConnect() {
-    let addr = "ws://127.0.0.1:9944"
+async function nodeConnect(addr) {
     console.log(`Trying to connect to ${addr}`);
     
     const provider = new polkadot.WsProvider(addr);
