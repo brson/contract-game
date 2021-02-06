@@ -41,17 +41,28 @@ function initAccountPage() {
 
     nodeConnectButton.disabled = false;
 
-    nodeConnectButton.addEventListener("click", (event) => {
+    nodeConnectButton.addEventListener("click", async (event) => {
         setInnerMessageNeutral(nodeStatusSpan, "waiting");
         nodeConnectButton.disabled = true;
-        nodeConnect()
-            .then((msg) => {
-                setInnerMessageSuccess(nodeStatusSpan, msg);
-            })
-            .catch((error) => {
-                setInnerMessageFail(nodeStatusSpan, error);
-                nodeConnectButton.disabled = false;
-            });
+        try {
+            let api = await nodeConnect();
+
+            console.log("api:");
+            console.log(api);
+
+            let { chain, nodeName, nodeVersion }
+                = await getChainMetadata(api);
+
+            let msg = `Connected to ${chain} using ${nodeName} v${nodeVersion}`;
+            console.log(msg);
+
+            setInnerMessageSuccess(nodeStatusSpan, msg);
+
+        } catch (error) {
+            setInnerMessageFail(nodeStatusSpan, error);
+            nodeConnectButton.disabled = false;
+            return;
+        }
     });
 }
 
@@ -62,15 +73,22 @@ async function nodeConnect() {
     const provider = new polkadot.WsProvider(addr);
     const api = await polkadot.ApiPromise.create({ provider });
 
+    return api;
+}
+
+async function getChainMetadata(api) {
+
     const [chain, nodeName, nodeVersion] = await Promise.all([
         api.rpc.system.chain(),
         api.rpc.system.name(),
         api.rpc.system.version()
     ]);
 
-    let msg = `Connected to ${chain} using ${nodeName} v${nodeVersion}`;
-    console.log(msg);
-    return msg;
+    return {
+        chain,
+        nodeName,
+        nodeVersion
+    }
 }
 
 function setInnerMessageSuccess(elt, msg) {
