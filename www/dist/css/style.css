@@ -1,90 +1,20 @@
 :root {
     box-sizing: border-box;
-    font-family: monospace;
-    font-size: 10pt;
 }
 
-.tower {
-    border: 1ch solid black;
+body {
+    max-width: 100ch;
     margin-left: auto;
     margin-right: auto;
-    padding: 1ch;
-    width: 125ch;
+    padding: 2ch;
 }
 
-.floor {
-    border: 1ch solid blue;
-    padding: 1ch;
+
+.msg-success {
+    color: green;
 }
 
-.floor-basic {
-    border: 1ch solid red;
-    padding: 1ch;
-    display: flex;
-    flex-direction: row;
+.msg-fail {
+    color: red;
 }
-
-.floor-illustration {
-    /*display: block-inline;*/
-    border: 1ch solid black;
-    padding: 1ch;
-    width: 54ch;
-    height: 20ch;
-    margin-right: 1ch;
-
-    background: white;
-}
-
-.floor-stats {
-    /*display: block-inline;*/
-    border: 1ch solid black;
-    padding: 1ch;
-    width: 54ch;
-    height: 20ch;
-}
-
-.floor-detail {
-    color: black;
-    background-color: white;
-
-    border: 1ch solid green;
-    padding: 1ch;
-    margin-top: 1ch;
-}
-
-.floor-detail.invisible {
-    display: none;
-}
-
-.floor {
-    margin-bottom: 1ch;
-}
-
-.floor:last-child {
-    margin-bottom: 0;
-}
-
-* {
-    background-color: white;
-}
-
-.tower {
-    display: flex;
-    flex-direction: column;
-}
-
-.tower .floor {
-    transition: margin-top 1s ease;
-}
-
-.tower.collapsed .floor:first-child {
-    margin-top: 0;
-}
-
-.tower.collapsed .floor {
-    margin-top: -33ch;
-}
-
-.floor.top-stacked-floor {
-    z-index: 1;
-}
+    

@@ -1038,13 +1038,15 @@ I am again going to update my tools.
 - `canvas-ui` - The frontend. I find that I am not using my own build of this program,
   but instead of the [hosted version][hcui]. Still, I keep this updated. I make a note
   to try using my own build today.
-- `cargo-contract` - This time I build it with `--features=extrensics`, with the goal
+- `cargo-contract` - This time I build it with `--features=extrinsics`, with the goal
   of attempting to deploy from the command-line, as the many-step process of setting
   up our contracts for testing is becoming a major source of confusion and frustration.
   It fails to build with `cargo install` initially, until I remember that `install`
   needs to be paired with `--locked` so that the lockfile is used.
   Even with `--locked` the build fails in a different way.
   This is commit 2f7b165e464b8f494c27095488d41da416d8f41e.
+  It does build without `--features=extrinsics`, so it seems the `extrinsics` feature
+  is just broken right now.
 - `canvas-node` - Again, there have been no changes to `canvas-node` since November.
   I decide that I want to get the benefits of any substrate changes, so I run
   `cargo update` to force upgrades of the dependencies. It doesn't build,
@@ -1053,6 +1055,8 @@ I am again going to update my tools.
 [hcui]: https://paritytech.github.io/canvas-ui/#/
 
 
+
+TODO
 
 
 
@@ -1272,16 +1276,18 @@ and also did that experiment with Dfinity.
 Today my goal is to execute transactions in our contract using
 the test accounts.
 
-My setup is wonky, so I better describe it:
+My node setup is wonky, so I better describe it:
 
 I am just using webpack to give me a bundle of the JS libraries I need,
-and everything else is just a static website, served by `yarn serve`.
+and everything else is just a static website, served by `yarn start`.
 I am doing this because I like and understand static websites:
 I want to be in the web platform world, not the npm/yarn/node world.
+If this were to progress beyond a prototype I would put more effort
+into learning "proper" node development.
 
 [Here is the source][jssrc] as of the current commit.
 
-[jssrc]: https://github.com/brson/contract-game/tree/23169f71f64499920b5f38792e9f66e579f03cd2/www
+[jssrc]: https://github.com/brson/contract-game/tree/45788de48f86b39baa8ba721bfbce8d32d109d75/www
 
 My webpacked JS file, under `src/index.js` just contains this:
 

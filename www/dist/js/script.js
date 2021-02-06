@@ -24,9 +24,7 @@ function loadApis() {
 }
 
 function initPage() {
-    if (document.getElementById("account-page") != null) {
-        initAccountPage();
-    }
+    initAccountPage();
 }
 
 function initAccountPage() {
@@ -44,14 +42,15 @@ function initAccountPage() {
     nodeConnectButton.disabled = false;
 
     nodeConnectButton.addEventListener("click", (event) => {
+        setInnerMessageNeutral(nodeStatusSpan, "waiting");
+        nodeConnectButton.disabled = true;
         nodeConnect()
             .then((msg) => {
-                nodeStatusSpan.innerText = msg;
-                nodeConnectButton.disabled = true;
+                setInnerMessageSuccess(nodeStatusSpan, msg);
             })
             .catch((error) => {
-                nodeStatusSpan.innerText = error;
-                nodeConnectButton.disabled = true;
+                setInnerMessageFail(nodeStatusSpan, error);
+                nodeConnectButton.disabled = false;
             });
     });
 }
@@ -73,6 +72,28 @@ async function nodeConnect() {
     console.log(msg);
     return msg;
 }
+
+function setInnerMessageSuccess(elt, msg) {
+    elt.innerText = msg;
+    elt.classList.remove("msg-fail");
+    elt.classList.add("msg-success");
+}
+
+function setInnerMessageFail(elt, msg) {
+    elt.innerText = msg;
+    elt.classList.remove("msg-success");
+    elt.classList.add("msg-fail");
+}
+
+function setInnerMessageNeutral(elt, msg) {
+    elt.innerText = msg;
+    elt.classList.remove("msg-success");
+    elt.classList.remove("msg-fail");
+}
+
+
+
+
 
 
 
