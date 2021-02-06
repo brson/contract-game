@@ -155,10 +155,12 @@ mod game {
     fn dispatch_level(level: u32, level_contract: AccountId) -> Result<bool, Error> {
         ink_env::debug_println(&format!("dispatch level: {}, calling contract: {:?}", level, level_contract));
 
+        // example_level's method:  #[ink(message, selector = "0xDEADBEEF")]
+
         let selector;
         match level {
-            0 => selector = [0xDE, 0xAD, 0xBE, 0xEF],
-            1 => selector = [0xDE, 0xAD, 0xEE, 0xEE],
+            0 => selector = [0xDE, 0xAD, 0xBE, 0xFF],
+            1 => selector = [0xDE, 0xAD, 0xBE, 0xEF],
             _ => unreachable!(),
         }
         
@@ -167,8 +169,8 @@ mod game {
         let return_value = build_call::<DefaultEnvironment>()
             .callee(level_contract)
             .exec_input(
-                ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xEF]))
-                // ExecutionInput::new(Selector::new(selector))  
+                // ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF]))
+                ExecutionInput::new(Selector::new(selector))  
             )
             .returns::<ReturnType<bool>>()
             .fire();
