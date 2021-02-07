@@ -1054,7 +1054,10 @@ I am again going to update my tools.
 
 [hcui]: https://paritytech.github.io/canvas-ui/#/
 
-
+Since the last time I built `cargo-contract` something has changed,
+and it no longer works without `wasm-opt` installed.
+I dig into and and find out I need to build it with `--features=binaryen-as-dependency`
+so that it will bundle the `wasm-opt` tool.
 
 TODO
 

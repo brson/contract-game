@@ -20,10 +20,6 @@ function loadApis() {
 }
 
 function initPage() {
-    initAccountPage();
-}
-
-function initAccountPage() {
     let nodeStatusSpan = document.getElementById("node-status");
     let nodeEndpointInput = document.getElementById("node-endpoint");
     let nodeConnectButton = document.getElementById("node-connect");
@@ -77,7 +73,7 @@ function initAccountPage() {
         }
     });
 
-    keyringConnectButton.addEventListener("click", (event) => {
+    keyringConnectButton.addEventListener("click", async (event) => {
         console.assert(api);
 
         const accountKey = accountKeyInput.value;
@@ -92,6 +88,11 @@ function initAccountPage() {
 
         accountKeyInput.disabled = true;
         keyringConnectButton.disabled = true;
+
+        try {
+            let accountInfo = await loadPlayerAccountInfo(api, keypair);
+        } catch (error) {
+        }
     });
 }
 
@@ -117,6 +118,10 @@ async function getChainMetadata(api) {
         nodeName,
         nodeVersion
     };
+}
+
+async function loadPlayerAccountInfo(api, keypair) {
+    
 }
 
 function setInnerMessageSuccess(elt, msg) {
