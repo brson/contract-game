@@ -33,8 +33,9 @@ function initAccountPage() {
     let accountIdSpan = document.getElementById("account-id");
     let keyringConnectButton = document.getElementById("keyring-connect");
 
-    let createGameAccountButton = document.getElementById("create-game-account");
-    let gameAccountLevelSpan = document.getElementById("account-level");
+    let playerAccountStatusSpan = document.getElementById("player-account-status");
+    let playerAccountLevelSpan = document.getElementById("player-account-level");
+    let createPlayerAccountButton = document.getElementById("create-player-account");
 
     nodeEndpointInput.disabled = false;
     nodeConnectButton.disabled = false;
