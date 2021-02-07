@@ -135,11 +135,26 @@ function initPage() {
                 setInnerMessageSuccess(playerAccountStatusSpan, "Active");
             } else {
                 setInnerMessageSuccess(playerAccountStatusSpan, "None");
-                createPlayerAccountButton.disabled = false
+                createPlayerAccountButton.disabled = false;
             }
         } catch (error) {
             setInnerMessageFail(playerAccountStatusSpan, error);
             // TODO what next?
+        }
+    });
+
+    createPlayerAccountButton.addEventListener("click", async (event) => {
+        console.assert(api);
+        console.assert(gameAbi);
+        console.assert(gameAccountId);
+
+        createPlayerAccountButton.disabled = true;
+
+        try {
+            await createPlayerAccount(api, gameAbi, gameAccountId, keypair);
+        } catch (error) {
+            setInnerMessageFail(playerAccountStatusSpan, error);
+            createPlayerAccountButton.disabled = false;
         }
     });
 }
@@ -214,6 +229,15 @@ async function loadPlayerAccountInfo(api, abi, gameAccountId, keypair) {
     } else {
         throw new Error("unable to load player account");
     }
+}
+
+async function createPlayerAccount(api, abi, gameAccountId, keypair) {
+    const contract = new polkadot.ContractPromise(api, abi, gameAccountId);
+    console.log("calling create_player_account");
+    const { result, output } = await contract.exec("create_player_account", 0, -1).signAndSend(keypair);
+    //const { result, output } = await contract.tx.createPlayerAccount(0, -1).signAndSend(keypair);
+    console.log(result);
+    console.log(output);
 }
 
 function setInnerMessageSuccess(elt, msg) {
