@@ -88,16 +88,17 @@ function initPage() {
         gameCheckButton.disabled = true;
 
         try {
-            let maybeAbi = await loadAbi();
+            let maybeGameAbi = await loadAbi();
 
             console.log("abi:");
-            console.log(maybeAbi);
+            console.log(maybeGameAbi);
             
             let maybeGameAccountId = gameAccountIdInput.value;
 
             // Try calling the game contract
-            await testGameContract(api, maybeGameAccountId);
+            await testGameContract(api, maybeGameAbi, maybeGameAccountId);
 
+            gameAbi = maybeGameAbi;
             gameAccountId = maybeGameAccountId;
 
             setInnerMessageSuccess(gameStatusSpan, "Online");
@@ -163,8 +164,17 @@ async function loadAbi() {
     return response.json();
 }
 
-async function testGameContract(api, gameAccountId) {
-    throw new Error("unimplemented");
+async function testGameContract(api, abi, gameAccountId) {
+    const contract = new polkadot.ContractPromise(api, abi, gameAccountId);
+    console.log("contract:");
+    console.log(contract);
+    const result = await contract.read("game_ready", 0, 0).send();
+    console.log("game_ready result:");
+    console.log(result);
+    console.log(result.output);
+    if (result.output != "heck, yeah") {
+        throw new Error("game contract failed init test");
+    }
 }
 
 async function loadPlayerAccountInfo(api, keypair) {
