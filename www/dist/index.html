@@ -12,23 +12,27 @@
   <script src="js/script.js" type="module" async></script>
 </head>
 
-<div id="account-section">
+<section>
 
   <p>Node status: <span id="node-status">disconnected</span></p>
 
-  <p><button id="node-connect" type="button" disabled>Connect to node</button></p>
-
   <p>Endpoint: <input id="node-endpoint" value="ws://127.0.0.1:9944" disabled></input></p>
 
-  <!-- -->
+  <p><button id="node-connect" type="button" disabled>Connect to node</button></p>
+
+</section>
+
+<section>
 
   <p>Keyring status: <span id="keyring-status">disconnected</span></p>
 
-  <p>Account ID: <input id="account-id" value="unknown"></input></p>
+  <p>Account Key: <input id="account-key" value="//Alice" disabled></input></p>
 
   <p><button id="keyring-connect" type="button" disabled>Connect to keyring</button></p>
 
-  <!-- -->
+</section>
+
+<section>
 
   <p><button id="create-game-account" type="button" disabled>Create game account</button></p>
 

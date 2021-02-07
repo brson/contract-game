@@ -1,7 +1,6 @@
 "use strict";
 
 let polkadot = null;
-let gameController = null;
 
 function maybeLoad() {
     window.addEventListener("load", (event) => {
@@ -11,9 +10,6 @@ function maybeLoad() {
 
 function onLoad() {
     loadApis();
-
-    gameController = {
-    };
 
     initPage();
 }
@@ -32,25 +28,31 @@ function initAccountPage() {
     let nodeEndpointInput = document.getElementById("node-endpoint");
     let nodeConnectButton = document.getElementById("node-connect");
 
-    let keyringStatusSpan = document.getElementById("wallet-status");
-    let walletConnectButton = document.getElementById("wallet-connect");
-    let accountIdInput = document.getElementById("account-id");
-    let accountStatusSpan = document.getElementById("account-status");
+    let keyringStatusSpan = document.getElementById("keyring-status");
+    let accountKeyInput = document.getElementById("account-key");
+    let accountIdSpan = document.getElementById("account-id");
+    let keyringConnectButton = document.getElementById("keyring-connect");
 
     let createGameAccountButton = document.getElementById("create-game-account");
     let gameAccountLevelSpan = document.getElementById("account-level");
 
-    nodeConnectButton.disabled = false;
     nodeEndpointInput.disabled = false;
+    nodeConnectButton.disabled = false;
+
+    let api = null;
+    let keyring = null;
+    let keypair = null;
 
     nodeConnectButton.addEventListener("click", async (event) => {
         let nodeEndpoint = nodeEndpointInput.value;
 
         setInnerMessageNeutral(nodeStatusSpan, "waiting");
-        nodeConnectButton.disabled = true;
+
         nodeEndpointInput.disabled = true;
+        nodeConnectButton.disabled = true;
+
         try {
-            let api = await nodeConnect(nodeEndpoint);
+            api = await nodeConnect(nodeEndpoint);
 
             console.log("api:");
             console.log(api);
@@ -63,12 +65,29 @@ function initAccountPage() {
 
             setInnerMessageSuccess(nodeStatusSpan, msg);
 
+            accountKeyInput.disabled = false;
+            keyringConnectButton.disabled = false;
+
         } catch (error) {
             setInnerMessageFail(nodeStatusSpan, error);
-            nodeConnectButton.disabled = false;
             nodeEndpointInput.disabled = false;
+            nodeConnectButton.disabled = false;
             return;
         }
+    });
+
+    keyringConnectButton.addEventListener("click", (event) => {
+        console.assert(api);
+
+        const accountKey = accountKeyInput.value;
+
+        keyring = new polkadot.Keyring();
+        keypair = keyring.addFromUri(accountKey);
+
+        console.log(`Key ${keypair.meta.name}: has address ${keypair.address} with publicKey [${keypair.publicKey}]`);
+
+        let msg = `Connected as ${keypair.address}`;
+        setInnerMessageSuccess(keyringStatusSpan, msg);
     });
 }
 
@@ -93,7 +112,7 @@ async function getChainMetadata(api) {
         chain,
         nodeName,
         nodeVersion
-    }
+    };
 }
 
 function setInnerMessageSuccess(elt, msg) {
