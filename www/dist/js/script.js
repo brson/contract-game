@@ -131,8 +131,14 @@ function initPage() {
 
         try {
             let accountInfo = await loadPlayerAccountInfo(api, gameAbi, gameAccountId, keypair);
+            if (accountInfo.hasAccount) {
+                setInnerMessageSuccess(playerAccountStatusSpan, "Active");
+            } else {
+                setInnerMessageSuccess(playerAccountStatusSpan, "None");
+                createPlayerAccountButton.disabled = false
+            }
         } catch (error) {
-            setInnerMessageFail(playerAccountLevelSpan, error);
+            setInnerMessageFail(playerAccountStatusSpan, error);
             // TODO what next?
         }
     });
@@ -190,7 +196,24 @@ async function testGameContract(api, abi, gameAccountId) {
 
 async function loadPlayerAccountInfo(api, abi, gameAccountId, keypair) {
     const contract = new polkadot.ContractPromise(api, abi, gameAccountId);
-    const result = await contract.read("have_player_account", 0, 0);
+    console.log("calling have_player_account");
+    const { result, output } = await contract.read("have_player_account", 0, 0, keypair.address).send();
+    console.log(result)
+    if (result.isOk) {
+        console.log(output);
+        const hasAccount = output.isTrue;
+        if (hasAccount) {
+            console.log("calling get_player_account");
+            const { result, output } = await contract.read("get_player_account", 0, 0, keypair.address).send();
+            console.log(output);
+        }
+        
+        return {
+            hasAccount,
+        };
+    } else {
+        throw new Error("unable to load player account");
+    }
 }
 
 function setInnerMessageSuccess(elt, msg) {
