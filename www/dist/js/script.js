@@ -163,7 +163,13 @@ async function nodeConnect(addr) {
     console.log(`Trying to connect to ${addr}`);
     
     const provider = new polkadot.WsProvider(addr);
-    const api = await polkadot.ApiPromise.create({ provider });
+    const api = await polkadot.ApiPromise.create({
+        provider,
+        types: {
+            "Address": "AccountId",
+            "LookupSource": "AccountId",
+        }
+    });
 
     return api;
 }
@@ -235,7 +241,9 @@ async function createPlayerAccount(api, abi, gameAccountId, keypair) {
     const contract = new polkadot.ContractPromise(api, abi, gameAccountId);
     console.log("calling create_player_account");
     console.log(keypair);
-    const { result, output } = await contract.exec("create_player_account", 0, 0).signAndSend(keypair);
+    const { gasConsumed } = await contract.read("create_player_account", 0, -1).send();
+    console.log(gasConsumed.toHuman());
+    const { result, output } = await contract.exec("create_player_account", 0, gasConsumed).signAndSend(keypair);
     //const { result, output } = await contract.tx.createPlayerAccount(0, -1).signAndSend(keypair);
     console.log(result);
     console.log(output);
