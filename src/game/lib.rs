@@ -125,6 +125,7 @@ mod game {
         #[ink(message)]
         pub fn run_level(&mut self, level: u32) -> Result<bool, Error> {
             let caller = self.env().caller();
+
             if let Some(player_account) = self.player_accounts.get_mut(&caller) {
                 ink_env::debug_println(&format!("game account: {:?}", player_account));
 
@@ -132,9 +133,11 @@ mod game {
                     ink_env::debug_println(&format!("program id: {:?}", level_contract));
                     dispatch_level(level, level_contract.clone())                    
                 } else {
+                    ink_env::debug_println(&format!("level_contract doesn't exist: {:?}", caller));
                     Err(Error::LevelContractNotExists)
                 }
             } else {
+                ink_env::debug_println(&format!("player account doesn't exist: {:?}", caller));
                 Err(Error::AccountNotExists)
             }        
         }
@@ -155,6 +158,8 @@ mod game {
     fn dispatch_level(level: u32, level_contract: AccountId) -> Result<bool, Error> {
         ink_env::debug_println(&format!("dispatch level: {}, calling contract: {:?}", level, level_contract));
 
+        
+        
         match level {
             0 => run_level_0_flipper(level_contract),
             1 => run_level_1_flipper(level_contract),
@@ -175,7 +180,9 @@ mod game {
 
 //        verify_cross_contract_call(&flipper_0)
             
-        if verify_cross_contract_call(&flipper_0).unwrap() {        
+        if verify_cross_contract_call(&flipper_0).unwrap() {
+            ink_env::debug_println(&format!("verify flipper 0"));
+
             let flipper_1 = build_call::<DefaultEnvironment>()
                 .callee(level_contract)
                 .exec_input(
@@ -185,6 +192,8 @@ mod game {
                 .fire();
 
             if verify_cross_contract_call(&flipper_1).unwrap() {
+                ink_env::debug_println(&format!("verify flipper 1"));
+
                 let flipper_2 = build_call::<DefaultEnvironment>()
                     .callee(level_contract)
                     .exec_input(
@@ -193,6 +202,8 @@ mod game {
                     .returns::<ReturnType<bool>>()
                     .fire();
                 if verify_cross_contract_call(&flipper_2).unwrap() {
+                    ink_env::debug_println(&format!("verify flipper 2"));
+
                     if flipper_0 == flipper_1 {
                         ink_env::debug_println(&format!("run_level_0_flipper call success"));
                         return Ok(true);
