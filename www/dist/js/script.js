@@ -113,6 +113,11 @@ function initPage() {
 
     keyringConnectButton.addEventListener("click", async (event) => {
         console.assert(api);
+        console.assert(gameAbi);
+        console.assert(gameAccountId);
+
+        accountKeyInput.disabled = true;
+        keyringConnectButton.disabled = true;
 
         const accountKey = accountKeyInput.value;
 
@@ -124,12 +129,11 @@ function initPage() {
         let msg = `Connected as ${keypair.address}`;
         setInnerMessageSuccess(keyringStatusSpan, msg);
 
-        accountKeyInput.disabled = true;
-        keyringConnectButton.disabled = true;
-
         try {
-            let accountInfo = await loadPlayerAccountInfo(api, keypair);
+            let accountInfo = await loadPlayerAccountInfo(api, gameAbi, gameAccountId, keypair);
         } catch (error) {
+            setInnerMessageFail(playerAccountLevelSpan, error);
+            // TODO what next?
         }
     });
 }
@@ -168,16 +172,25 @@ async function testGameContract(api, abi, gameAccountId) {
     const contract = new polkadot.ContractPromise(api, abi, gameAccountId);
     console.log("contract:");
     console.log(contract);
-    const result = await contract.read("game_ready", 0, 0).send();
+    const { result, output } = await contract.read("game_ready", 0, 0).send();
     console.log("game_ready result:");
     console.log(result);
-    console.log(result.output);
-    if (result.output != "heck, yeah") {
+    console.log(output);
+    if (result.isOk) {
+        const msg = output.toHuman();
+        // FIXME: Why is this preceeded with a "("??
+        const expected = "(heck, yeah";
+        if (msg != expected) {
+            throw new Error("game contract failed init test");
+        }
+    } else {
         throw new Error("game contract failed init test");
     }
 }
 
-async function loadPlayerAccountInfo(api, keypair) {
+async function loadPlayerAccountInfo(api, abi, gameAccountId, keypair) {
+    const contract = new polkadot.ContractPromise(api, abi, gameAccountId);
+    const result = await contract.read("have_player_account", 0, 0);
 }
 
 function setInnerMessageSuccess(elt, msg) {
