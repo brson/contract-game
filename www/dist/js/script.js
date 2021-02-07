@@ -88,6 +88,9 @@ function initAccountPage() {
 
         let msg = `Connected as ${keypair.address}`;
         setInnerMessageSuccess(keyringStatusSpan, msg);
+
+        accountKeyInput.disabled = true;
+        keyringConnectButton.disabled = true;
     });
 }
 
