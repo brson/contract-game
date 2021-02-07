@@ -1,0 +1,634 @@
+{
+  "metadataVersion": "0.1.0",
+  "source": {
+    "hash": "0xf4b0f23afe58c043f738d7262ea087d6ee350b70ced190cf4743a57ab9eecf67",
+    "language": "ink! 3.0.0-rc2",
+    "compiler": "rustc 1.51.0-nightly"
+  },
+  "contract": {
+    "name": "game",
+    "version": "0.1.0",
+    "authors": [
+      "Aimee Zhu <aimeez@pm.me>"
+    ]
+  },
+  "spec": {
+    "constructors": [
+      {
+        "args": [],
+        "docs": [],
+        "name": [
+          "default"
+        ],
+        "selector": "0x6a3712e2"
+      }
+    ],
+    "docs": [],
+    "events": [],
+    "messages": [
+      {
+        "args": [],
+        "docs": [
+          " This is a sanity check for the application initialization code"
+        ],
+        "mutates": false,
+        "name": [
+          "game_ready"
+        ],
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "String"
+          ],
+          "type": 13
+        },
+        "selector": "0x8a5d29a5"
+      },
+      {
+        "args": [
+          {
+            "name": "account",
+            "type": {
+              "displayName": [
+                "AccountId"
+              ],
+              "type": 4
+            }
+          }
+        ],
+        "docs": [
+          " Query if the caller has an account"
+        ],
+        "mutates": false,
+        "name": [
+          "have_player_account"
+        ],
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "bool"
+          ],
+          "type": 14
+        },
+        "selector": "0x3503be12"
+      },
+      {
+        "args": [],
+        "docs": [
+          " Create an account for the caller",
+          "",
+          " # Errors",
+          "",
+          " - The account exists.",
+          " - The paid amount is insufficient."
+        ],
+        "mutates": true,
+        "name": [
+          "create_player_account"
+        ],
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "Result"
+          ],
+          "type": 15
+        },
+        "selector": "0x4b04502d"
+      },
+      {
+        "args": [
+          {
+            "name": "account",
+            "type": {
+              "displayName": [
+                "AccountId"
+              ],
+              "type": 4
+            }
+          }
+        ],
+        "docs": [
+          " Retrieve caller's account information",
+          "",
+          " # Errors",
+          "",
+          " - The account doesn't exist."
+        ],
+        "mutates": false,
+        "name": [
+          "get_player_account"
+        ],
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "Result"
+          ],
+          "type": 15
+        },
+        "selector": "0xd280cf0a"
+      },
+      {
+        "args": [
+          {
+            "name": "level",
+            "type": {
+              "displayName": [
+                "u32"
+              ],
+              "type": 2
+            }
+          },
+          {
+            "name": "level_contract",
+            "type": {
+              "displayName": [
+                "AccountId"
+              ],
+              "type": 4
+            }
+          }
+        ],
+        "docs": [
+          " Submit a program for a level puzzle",
+          "",
+          " # Errors",
+          "",
+          " - Level is greater than caller's current level.",
+          " - Program fails verification.",
+          " - Program account doesn't exist."
+        ],
+        "mutates": true,
+        "name": [
+          "submit_level"
+        ],
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "Result"
+          ],
+          "type": 17
+        },
+        "selector": "0x21a5745d"
+      },
+      {
+        "args": [
+          {
+            "name": "level",
+            "type": {
+              "displayName": [
+                "u32"
+              ],
+              "type": 2
+            }
+          }
+        ],
+        "docs": [
+          " Run a level",
+          "",
+          " # Errors",
+          "",
+          " - Level is greater than caller's current level.",
+          " - Caller has no submiss for this level.",
+          " - Submitted program doesn't implement required contracts."
+        ],
+        "mutates": true,
+        "name": [
+          "run_level"
+        ],
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "Result"
+          ],
+          "type": 18
+        },
+        "selector": "0xde512a7a"
+      }
+    ]
+  },
+  "storage": {
+    "struct": {
+      "fields": [
+        {
+          "layout": {
+            "struct": {
+              "fields": [
+                {
+                  "layout": {
+                    "struct": {
+                      "fields": [
+                        {
+                          "layout": {
+                            "cell": {
+                              "key": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                              "ty": 1
+                            }
+                          },
+                          "name": "header"
+                        },
+                        {
+                          "layout": {
+                            "struct": {
+                              "fields": [
+                                {
+                                  "layout": {
+                                    "cell": {
+                                      "key": "0x0100000000000000000000000000000000000000000000000000000000000000",
+                                      "ty": 2
+                                    }
+                                  },
+                                  "name": "len"
+                                },
+                                {
+                                  "layout": {
+                                    "array": {
+                                      "cellsPerElem": 1,
+                                      "layout": {
+                                        "cell": {
+                                          "key": "0x0100000001000000000000000000000000000000000000000000000000000000",
+                                          "ty": 3
+                                        }
+                                      },
+                                      "len": 4294967295,
+                                      "offset": "0x0200000000000000000000000000000000000000000000000000000000000000"
+                                    }
+                                  },
+                                  "name": "elems"
+                                }
+                              ]
+                            }
+                          },
+                          "name": "entries"
+                        }
+                      ]
+                    }
+                  },
+                  "name": "keys"
+                },
+                {
+                  "layout": {
+                    "hash": {
+                      "layout": {
+                        "cell": {
+                          "key": "0x0200000001000000000000000000000000000000000000000000000000000000",
+                          "ty": 8
+                        }
+                      },
+                      "offset": "0x0100000001000000000000000000000000000000000000000000000000000000",
+                      "strategy": {
+                        "hasher": "Blake2x256",
+                        "postfix": "",
+                        "prefix": "0x696e6b20686173686d6170"
+                      }
+                    }
+                  },
+                  "name": "values"
+                }
+              ]
+            }
+          },
+          "name": "player_accounts"
+        }
+      ]
+    }
+  },
+  "types": [
+    {
+      "def": {
+        "composite": {
+          "fields": [
+            {
+              "name": "last_vacant",
+              "type": 2
+            },
+            {
+              "name": "len",
+              "type": 2
+            },
+            {
+              "name": "len_entries",
+              "type": 2
+            }
+          ]
+        }
+      },
+      "path": [
+        "ink_storage",
+        "collections",
+        "stash",
+        "Header"
+      ]
+    },
+    {
+      "def": {
+        "primitive": "u32"
+      }
+    },
+    {
+      "def": {
+        "variant": {
+          "variants": [
+            {
+              "fields": [
+                {
+                  "type": 7
+                }
+              ],
+              "name": "Vacant"
+            },
+            {
+              "fields": [
+                {
+                  "type": 4
+                }
+              ],
+              "name": "Occupied"
+            }
+          ]
+        }
+      },
+      "params": [
+        4
+      ],
+      "path": [
+        "ink_storage",
+        "collections",
+        "stash",
+        "Entry"
+      ]
+    },
+    {
+      "def": {
+        "composite": {
+          "fields": [
+            {
+              "type": 5
+            }
+          ]
+        }
+      },
+      "path": [
+        "ink_env",
+        "types",
+        "AccountId"
+      ]
+    },
+    {
+      "def": {
+        "array": {
+          "len": 32,
+          "type": 6
+        }
+      }
+    },
+    {
+      "def": {
+        "primitive": "u8"
+      }
+    },
+    {
+      "def": {
+        "composite": {
+          "fields": [
+            {
+              "name": "next",
+              "type": 2
+            },
+            {
+              "name": "prev",
+              "type": 2
+            }
+          ]
+        }
+      },
+      "path": [
+        "ink_storage",
+        "collections",
+        "stash",
+        "VacantEntry"
+      ]
+    },
+    {
+      "def": {
+        "composite": {
+          "fields": [
+            {
+              "name": "value",
+              "type": 9
+            },
+            {
+              "name": "key_index",
+              "type": 2
+            }
+          ]
+        }
+      },
+      "params": [
+        9
+      ],
+      "path": [
+        "ink_storage",
+        "collections",
+        "hashmap",
+        "ValueEntry"
+      ]
+    },
+    {
+      "def": {
+        "composite": {
+          "fields": [
+            {
+              "name": "level",
+              "type": 2
+            },
+            {
+              "name": "level_contracts",
+              "type": 10
+            }
+          ]
+        }
+      },
+      "path": [
+        "game",
+        "game",
+        "PlayerAccount"
+      ]
+    },
+    {
+      "def": {
+        "composite": {
+          "fields": [
+            {
+              "type": 12
+            }
+          ]
+        }
+      },
+      "params": [
+        11
+      ],
+      "path": [
+        "BTreeMap"
+      ]
+    },
+    {
+      "def": {
+        "tuple": [
+          2,
+          4
+        ]
+      }
+    },
+    {
+      "def": {
+        "sequence": {
+          "type": 11
+        }
+      }
+    },
+    {
+      "def": {
+        "primitive": "str"
+      }
+    },
+    {
+      "def": {
+        "primitive": "bool"
+      }
+    },
+    {
+      "def": {
+        "variant": {
+          "variants": [
+            {
+              "fields": [
+                {
+                  "type": 9
+                }
+              ],
+              "name": "Ok"
+            },
+            {
+              "fields": [
+                {
+                  "type": 16
+                }
+              ],
+              "name": "Err"
+            }
+          ]
+        }
+      },
+      "params": [
+        9,
+        16
+      ],
+      "path": [
+        "Result"
+      ]
+    },
+    {
+      "def": {
+        "variant": {
+          "variants": [
+            {
+              "discriminant": 0,
+              "name": "InsufficiantBalance"
+            },
+            {
+              "discriminant": 1,
+              "name": "AccountExists"
+            },
+            {
+              "discriminant": 2,
+              "name": "AccountNotExists"
+            },
+            {
+              "discriminant": 3,
+              "name": "SubmitLevelContractFailed"
+            },
+            {
+              "discriminant": 4,
+              "name": "SubmittedGreaterLevel"
+            },
+            {
+              "discriminant": 5,
+              "name": "LevelContractNotExists"
+            },
+            {
+              "discriminant": 6,
+              "name": "LevelContractCallFailed"
+            }
+          ]
+        }
+      },
+      "path": [
+        "game",
+        "game",
+        "Error"
+      ]
+    },
+    {
+      "def": {
+        "variant": {
+          "variants": [
+            {
+              "fields": [
+                {
+                  "type": 4
+                }
+              ],
+              "name": "Ok"
+            },
+            {
+              "fields": [
+                {
+                  "type": 16
+                }
+              ],
+              "name": "Err"
+            }
+          ]
+        }
+      },
+      "params": [
+        4,
+        16
+      ],
+      "path": [
+        "Result"
+      ]
+    },
+    {
+      "def": {
+        "variant": {
+          "variants": [
+            {
+              "fields": [
+                {
+                  "type": 14
+                }
+              ],
+              "name": "Ok"
+            },
+            {
+              "fields": [
+                {
+                  "type": 16
+                }
+              ],
+              "name": "Err"
+            }
+          ]
+        }
+      },
+      "params": [
+        14,
+        16
+      ],
+      "path": [
+        "Result"
+      ]
+    }
+  ]
+}

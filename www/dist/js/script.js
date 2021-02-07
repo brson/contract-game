@@ -1,6 +1,7 @@
 "use strict";
 
 let devnetGameAccountId = "5DFeyd6tx1kLqUCKNX4ME9nq2eRBjCWu8NG3AQfkXpXBZ7FY";
+let contractAbiUrl = "game-metadata.json";
 
 let polkadot = null;
 
@@ -44,6 +45,7 @@ function initPage() {
     nodeConnectButton.disabled = false;
 
     let api = null;
+    let gameAbi = null;
     let gameAccountId = null;
     let keyring = null;
     let keypair = null;
@@ -86,6 +88,11 @@ function initPage() {
         gameCheckButton.disabled = true;
 
         try {
+            let maybeAbi = await loadAbi();
+
+            console.log("abi:");
+            console.log(maybeAbi);
+            
             let maybeGameAccountId = gameAccountIdInput.value;
 
             // Try calling the game contract
@@ -148,6 +155,12 @@ async function getChainMetadata(api) {
         nodeName,
         nodeVersion
     };
+}
+
+async function loadAbi() {
+    console.log(`loading game contract ABI from ${contractAbiUrl}`);
+    let response = await window.fetch(contractAbiUrl);
+    return response.json();
 }
 
 async function testGameContract(api, gameAccountId) {
