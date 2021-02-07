@@ -276,7 +276,6 @@ async function createPlayerAccount(api, abi, gameAccountId, keypair) {
     const contract = new polkadot.ContractPromise(api, abi, gameAccountId);
     console.log("calling create_player_account");
     const { result, output } = await contract.exec("create_player_account", 0, -1).signAndSend(keypair);
-    //const { result, output } = await contract.tx.createPlayerAccount(0, -1).signAndSend(keypair);
     console.log(result);
     console.log(output);
 }
