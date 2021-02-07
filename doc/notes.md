@@ -1357,8 +1357,29 @@ Otherwise I don't know much about JavaScript modules.
 
 TODO
 
+```
+    const api = await polkadot.ApiPromise.create({
+        provider,
+        types: {
+            "Address": "AccountId",
+            "LookupSource": "AccountId",
+        }
+    });
+```
 
+My "//Bob" address is wrong.
+It was because I wasn't specifying a "sr25519" keyring.
+I thought I read it was the default but I had to specify it per
 
+```JavaScript
+        keyring = new polkadot.Keyring({ type: "sr25519" });
+```
+
+The [keyring docs][krdcs] say to use `ss58Format: 2`,
+but I find if I do this that my key looks different
+than the one on the Polkadot block explorer for my devnet.
+
+[krdcs]: https://polkadot.js.org/docs/keyring/start/create
 
 
 

@@ -120,19 +120,36 @@ function initPage() {
         keyringConnectButton.disabled = true;
 
         const accountKey = accountKeyInput.value;
+        console.log(`accountKey: ${accountKey}`);
 
-        keyring = new polkadot.Keyring();
+        keyring = new polkadot.Keyring({ type: "sr25519" });
         keypair = keyring.addFromUri(accountKey);
 
         console.log(`Key ${keypair.meta.name}: has address ${keypair.address} with publicKey [${keypair.publicKey}]`);
+        console.log(keypair);
+        
+        try {
+            const account = await api.query.system.account(keypair.address);
+            console.log("account:");
+            console.log(account);
+            const balance = account.data;
 
-        let msg = `Connected as ${keypair.address}`;
-        setInnerMessageSuccess(keyringStatusSpan, msg);
+            console.log(`balance: ${balance.free}`);
+
+            let msg = `Connected as ${keypair.address}`;
+            setInnerMessageSuccess(keyringStatusSpan, msg);
+        } catch (error) {
+            setInnerMessageFail(keyringStatusSpan, error);
+            accountKeyInput.disabled = false;
+            keyringConnectButton.disabled = false;
+            return;
+        }
 
         try {
             let accountInfo = await loadPlayerAccountInfo(api, gameAbi, gameAccountId, keypair);
             if (accountInfo.hasAccount) {
                 setInnerMessageSuccess(playerAccountStatusSpan, "Active");
+                setInnerMessageSuccess(playerAccountLevelSpan, accountInfo.level);
             } else {
                 setInnerMessageSuccess(playerAccountStatusSpan, "None");
                 createPlayerAccountButton.disabled = false;
@@ -152,6 +169,7 @@ function initPage() {
 
         try {
             await createPlayerAccount(api, gameAbi, gameAccountId, keypair);
+            // TODO load and display account info per loadPlayerAccount
         } catch (error) {
             setInnerMessageFail(playerAccountStatusSpan, error);
             createPlayerAccountButton.disabled = false;
@@ -223,14 +241,31 @@ async function loadPlayerAccountInfo(api, abi, gameAccountId, keypair) {
     if (result.isOk) {
         console.log(output);
         const hasAccount = output.isTrue;
+        let level = -1;
         if (hasAccount) {
             console.log("calling get_player_account");
             const { result, output } = await contract.read("get_player_account", 0, 0, keypair.address).send();
+            console.log(result);
             console.log(output);
+            if (result.isOk) {
+                if (output.isOk) {
+                    const playerAccount = output.asOk;
+                    level = playerAccount.level.toHuman();
+                    console.log(`level: ${level}`);
+                    
+                } else {
+                    // todo
+                    // contract error
+                }
+            } else {
+                // todo
+                // call failed
+            }
         }
         
         return {
             hasAccount,
+            level,
         };
     } else {
         throw new Error("unable to load player account");
@@ -240,10 +275,7 @@ async function loadPlayerAccountInfo(api, abi, gameAccountId, keypair) {
 async function createPlayerAccount(api, abi, gameAccountId, keypair) {
     const contract = new polkadot.ContractPromise(api, abi, gameAccountId);
     console.log("calling create_player_account");
-    console.log(keypair);
-    const { gasConsumed } = await contract.read("create_player_account", 0, -1).send();
-    console.log(gasConsumed.toHuman());
-    const { result, output } = await contract.exec("create_player_account", 0, gasConsumed).signAndSend(keypair);
+    const { result, output } = await contract.exec("create_player_account", 0, -1).signAndSend(keypair);
     //const { result, output } = await contract.tx.createPlayerAccount(0, -1).signAndSend(keypair);
     console.log(result);
     console.log(output);
