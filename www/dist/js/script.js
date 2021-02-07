@@ -1,5 +1,7 @@
 "use strict";
 
+let devnetGameAccountId = "5DFeyd6tx1kLqUCKNX4ME9nq2eRBjCWu8NG3AQfkXpXBZ7FY";
+
 let polkadot = null;
 
 function maybeLoad() {
@@ -10,7 +12,6 @@ function maybeLoad() {
 
 function onLoad() {
     loadApis();
-
     initPage();
 }
 
@@ -24,6 +25,10 @@ function initPage() {
     let nodeEndpointInput = document.getElementById("node-endpoint");
     let nodeConnectButton = document.getElementById("node-connect");
 
+    let gameStatusSpan = document.getElementById("game-status");
+    let gameAccountIdInput = document.getElementById("game-account-id");
+    let gameCheckButton = document.getElementById("game-check");
+
     let keyringStatusSpan = document.getElementById("keyring-status");
     let accountKeyInput = document.getElementById("account-key");
     let accountIdSpan = document.getElementById("account-id");
@@ -33,10 +38,13 @@ function initPage() {
     let playerAccountLevelSpan = document.getElementById("player-account-level");
     let createPlayerAccountButton = document.getElementById("create-player-account");
 
+    gameAccountIdInput.value = devnetGameAccountId;
+
     nodeEndpointInput.disabled = false;
     nodeConnectButton.disabled = false;
 
     let api = null;
+    let gameAccountId = null;
     let keyring = null;
     let keypair = null;
 
@@ -62,14 +70,36 @@ function initPage() {
 
             setInnerMessageSuccess(nodeStatusSpan, msg);
 
-            accountKeyInput.disabled = false;
-            keyringConnectButton.disabled = false;
+            gameAccountIdInput.disabled = false;
+            gameCheckButton.disabled = false;
 
         } catch (error) {
             setInnerMessageFail(nodeStatusSpan, error);
             nodeEndpointInput.disabled = false;
             nodeConnectButton.disabled = false;
             return;
+        }
+    });
+
+    gameCheckButton.addEventListener("click", async (event) => {
+        gameAccountIdInput.disabled = true;
+        gameCheckButton.disabled = true;
+
+        try {
+            let maybeGameAccountId = gameAccountIdInput.value;
+
+            // Try calling the game contract
+            await testGameContract(api, maybeGameAccountId);
+
+            gameAccountId = maybeGameAccountId;
+
+            setInnerMessageSuccess(gameStatusSpan, "Online");
+            accountKeyInput.disabled = false;
+            keyringConnectButton.disabled = false;
+        } catch (error) {
+            setInnerMessageFail(gameStatusSpan, error);
+            gameAccountIdInput.disabled = false;
+            gameCheckButton.disabled = false;
         }
     });
 
@@ -120,8 +150,11 @@ async function getChainMetadata(api) {
     };
 }
 
+async function testGameContract(api, gameAccountId) {
+    throw new Error("unimplemented");
+}
+
 async function loadPlayerAccountInfo(api, keypair) {
-    
 }
 
 function setInnerMessageSuccess(elt, msg) {
