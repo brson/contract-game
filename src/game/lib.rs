@@ -35,6 +35,10 @@ mod game {
                 level_contracts: BTreeMap::new(),
             }
         }
+
+        fn level_up(&mut self) {
+            self.level +=1;            
+        }        
     }
     
     #[derive(Debug, scale::Encode)]
@@ -88,6 +92,7 @@ mod game {
         /// - The account doesn't exist.
         #[ink(message)]
         pub fn get_player_account(&self, account: AccountId) -> Result<PlayerAccount, Error> {
+            ink_env::debug_println(&format!("Get player account {:?}", self.player_accounts.get(&account).cloned()));
             self.player_accounts.get(&account).cloned().ok_or(Error::AccountNotExists)
         }
 
@@ -131,7 +136,7 @@ mod game {
 
                 if let Some(level_contract) = player_account.level_contracts.get(&level) {
                     ink_env::debug_println(&format!("program id: {:?}", level_contract));
-                    dispatch_level(level, level_contract.clone())                    
+                    dispatch_level(player_account, level, level_contract.clone())                         
                 } else {
                     ink_env::debug_println(&format!("level_contract doesn't exist: {:?}", caller));
                     Err(Error::LevelContractNotExists)
@@ -155,20 +160,19 @@ mod game {
         }
     }
 
-    fn dispatch_level(level: u32, level_contract: AccountId) -> Result<bool, Error> {
+    fn dispatch_level(player_account: &mut PlayerAccount, level: u32, level_contract: AccountId) -> Result<bool, Error> {
         ink_env::debug_println(&format!("dispatch level: {}, calling contract: {:?}", level, level_contract));
         
         match level {
-            0 => run_level_0_flipper(level_contract),
-            1 => run_level_1_flipper(level_contract),
+            0 => run_level_0_flipper(player_account, level_contract),
+            1 => run_level_1_flipper(player_account, level_contract),
             _ => return unreachable!(),
         }
     }
 
-    fn run_level_0_flipper(level_contract: AccountId) -> Result<bool, Error> {
+    fn run_level_0_flipper(player_account: &mut PlayerAccount, level_contract: AccountId) -> Result<bool, Error> {
         ink_env::debug_println(&format!("run_level_0_flipper, calling contract: {:?}", level_contract));
 
-        // get the current flipper state
         let flipper_current_state = build_call::<DefaultEnvironment>()
             .callee(level_contract)
             .exec_input(
@@ -177,7 +181,7 @@ mod game {
             .returns::<ReturnType<bool>>()
             .fire();
             
-        if verify_cross_contract_call(&flipper_current_state).unwrap() {
+        if is_call_succeed(&flipper_current_state).unwrap() {
             ink_env::debug_println(&format!("verified flipper current state"));
 
             let flipper_set_state = build_call::<DefaultEnvironment>()
@@ -188,8 +192,53 @@ mod game {
                 .returns::<ReturnType<bool>>()
                 .fire();
 
-//            if verify_cross_contract_call(&flipper_set_state).unwrap() {
-//                ink_env::debug_println(&format!("verify flipper set state"));
+            let flipper_new_state = build_call::<DefaultEnvironment>()
+                .callee(level_contract)
+                .exec_input(
+                    ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF]))
+                )
+                .returns::<ReturnType<bool>>()
+                .fire();
+            if is_call_succeed(&flipper_new_state).unwrap() {
+                ink_env::debug_println(&format!("verify flipper new state"));
+
+                if flipper_current_state != flipper_new_state {
+                    ink_env::debug_println(&format!("run_level_0_flipper call success"));
+
+                    // player's current level + 1
+                    player_account.level_up();
+                    ink_env::debug_println(&format!("player_account: {:?}", &player_account));
+                    
+                    return Ok(true);
+                }
+            }
+        }
+         
+        ink_env::debug_println(&format!("run_level_0_flipper call failed"));
+        Err(Error::LevelContractCallFailed)
+    }
+
+    fn run_level_1_flipper(player_account: &mut PlayerAccount, level_contract: AccountId) -> Result<bool, Error> {
+        ink_env::debug_println(&format!("run_level_1_flipper, calling contract: {:?}", level_contract));
+
+        let flipper_current_state = build_call::<DefaultEnvironment>()
+            .callee(level_contract)
+            .exec_input(
+                ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF]))
+            )
+            .returns::<ReturnType<bool>>()
+            .fire();
+            
+        if is_call_succeed(&flipper_current_state).unwrap() {
+            ink_env::debug_println(&format!("verified flipper current state"));
+
+            let flipper_set_state = build_call::<DefaultEnvironment>()
+                .callee(level_contract)
+                .exec_input(
+                    ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xEF]))
+                )
+                .returns::<ReturnType<bool>>()
+                .fire();
 
             let flipper_new_state = build_call::<DefaultEnvironment>()
                 .callee(level_contract)
@@ -198,60 +247,17 @@ mod game {
                 )
                 .returns::<ReturnType<bool>>()
                 .fire();
-            if verify_cross_contract_call(&flipper_new_state).unwrap() {
+            if is_call_succeed(&flipper_new_state).unwrap() {
                 ink_env::debug_println(&format!("verify flipper new state"));
 
                 if flipper_current_state != flipper_new_state {
-                    ink_env::debug_println(&format!("run_level_0_flipper call success"));
+                    ink_env::debug_println(&format!("run_level_1_flipper call success"));
+
+                    // player's current level + 1
+                    player_account.level_up();
+                    ink_env::debug_println(&format!("player_account: {:?}", &player_account));
+                    
                     return Ok(true);
-                }
-                }
-//            }
-        }
-         
-        ink_env::debug_println(&format!("run_level_0_flipper call failed"));
-        Err(Error::LevelContractCallFailed)
-    }
-
-    fn run_level_1_flipper(level_contract: AccountId) -> Result<bool, Error> {
-        ink_env::debug_println(&format!("run_level_1_flipper, calling contract: {:?}", level_contract));
-
-        let flipper_0 = build_call::<DefaultEnvironment>()
-            .callee(level_contract)
-            .exec_input(
-                ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF]))
-            )
-            .returns::<ReturnType<bool>>()
-            .fire();
-            
-        if verify_cross_contract_call(&flipper_0).unwrap() {
-            ink_env::debug_println(&format!("verify flipper 0"));
-
-            let flipper_1 = build_call::<DefaultEnvironment>()
-                .callee(level_contract)
-                .exec_input(
-                    ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF]))
-                )
-                .returns::<ReturnType<bool>>()
-                .fire();
-
-            if verify_cross_contract_call(&flipper_1).unwrap() {
-                ink_env::debug_println(&format!("verify flipper 1"));
-
-                let flipper_2 = build_call::<DefaultEnvironment>()
-                    .callee(level_contract)
-                    .exec_input(
-                        ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF]))
-                    )
-                    .returns::<ReturnType<bool>>()
-                    .fire();
-                if verify_cross_contract_call(&flipper_2).unwrap() {
-                    ink_env::debug_println(&format!("verify flipper 2"));
-
-                    if flipper_0 == flipper_1 {
-                        ink_env::debug_println(&format!("run_level_1_flipper call success"));
-                        return Ok(true);
-                    }
                 }
             }
         }
@@ -260,7 +266,7 @@ mod game {
         Err(Error::LevelContractCallFailed)
     }
 
-    fn verify_cross_contract_call(return_value: &Result<bool, ink_env::Error>) -> Result<bool, Error> {
+    fn is_call_succeed(return_value: &Result<bool, ink_env::Error>) -> Result<bool, Error> {
         match return_value {
             Ok(heads_or_tails) => {
                 ink_env::debug_println(&format!("get method call success"));
