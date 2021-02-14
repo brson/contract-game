@@ -1091,6 +1091,9 @@ and our UI can interpret error return values.
 We have found that the testing process we are stuck in is extremely onerous,
 so much so that after a few rounds we get discouraged
 and walk away for a while.
+And when we think about coming back to the project,
+the knowledge that the test cycle is going to be so tedius
+often makes us procrastinate and do something else instead.
 
 Here's more or less the steps we need to take for every change:
 
