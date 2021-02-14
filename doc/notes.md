@@ -1126,6 +1126,12 @@ And when we think about coming back to the project,
 the knowledge that the test cycle is going to be so tedius
 often makes us procrastinate and do something else instead.
 
+Since we were unable to discover what we were doing wrong
+when trying to use `CallBuilder` &mdash; our code ultimately
+just started working on its own,
+I am inclined to attribute our extended confusion to human
+errors in this build-deploy-test cycle.
+
 Here's more or less the steps we need to take for every change:
 
 - Build the game contract
