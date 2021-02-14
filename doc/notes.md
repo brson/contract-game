@@ -1,5 +1,3 @@
-# 2021/01/01
-
 # Further adventures with parity's `ink!`
 
 During my [last series of bloggings][subblog] about [Substrate],
@@ -23,26 +21,30 @@ contract implementation with Ink,
 client implementation with [polkadot.js],
 and some concluding thoughts.
 
+This project began on 2021/01/01,
+and continued in small bursts through 2021/02/13.
+Along the way we changed the exact revisions of the software
+we were using several times.
 
 [Substrate]: https://substrate.dev
 [subblog]: https://brson.github.io/2020/12/03/substrate-and-ink-part-1
 [`ink!`]: https://github.com/paritytech/ink
-[plokadot.js]: https://github.com/polkadot-js
+[polkadot.js]: https://github.com/polkadot-js
 
-- [Our project][#our-project]
-  - [Terminology][#terminology]
-- [Implementing the contract][#implementing-the-contract]
-  - [Debugging cross-contract calls][#debugging-cross-contract-calls]
-  - [But first, updating our tools][#but-first-updating-our-tools]
-  - [And then debugging cross-contract calls][#and-then-debugging-cross-contract-calls]
-  - [Another try at cross-contract calls with `CallBuilder`][#another-try-at-cross-contract-calls-with-callbuilder]
-  - [Wait what's this? Some weird new issue!][#wait-whats-this-some-weird-new-issue]
-  - [Another try at cross-contract calls with `CallBuilder`, take 2][#another-try-at-cross-contract-calls-with-callbuilder-take-2]
-- [Connecting to our contract with polkadot-js][#connecting-to-our-contract-with-polkadot-js]
-- [Some thoughts][#some-thoughts]
-  - [First, some hopefulness][#first-some-hopefulness]
-  - [Next, some venting][#next-some-venting]
-  - [It's ok, I'm learning][#its-ok-im-learning]
+- [Our project](#our-project)
+  - [Terminology](#terminology)
+- [Implementing the contract](#implementing-the-contract)
+  - [Debugging cross-contract calls](#debugging-cross-contract-calls)
+  - [But first, updating our tools](#but-first-updating-our-tools)
+  - [And then debugging cross-contract calls](#and-then-debugging-cross-contract-calls)
+  - [Another try at cross-contract calls with `CallBuilder`](#another-try-at-cross-contract-calls-with-callbuilder)
+  - [Wait what's this? Some weird new issue!](#wait-whats-this-some-weird-new-issue)
+  - [Another try at cross-contract calls with `CallBuilder`, take 2](#another-try-at-cross-contract-calls-with-callbuilder-take-2)
+- [Connecting to our contract with polkadot-js](#connecting-to-our-contract-with-polkadot-js)
+- [Some thoughts](#some-thoughts)
+  - [First, some hopefulness](#first-some-hopefulness)
+  - [Next, some venting](#next-some-venting)
+  - [It's ok, I'm learning](#its-ok-im-learning)
 
 
 
@@ -1064,16 +1066,97 @@ TODO
 
 
 
+## Aimee finishes the level progression logic
+
+While I've been goofing off and hacking on other projects,
+Aimee has continued trying to complete our proof of concept contract,
+adding level progression,
+so that when a player succeeds at level 0,
+they get access to level 1,
+etc.
+
+`canvas-ui` when executing a transaction doesn't show anything about the return value,
+and in particular doesn't show anything when our methods return `Err`.
+To compensate for this we find it necessary to add logging to every exit condition
+so that we can figure out what happened.
+This won't be as crucial once we are exercising the contract via our own UI,
+and our UI can interpret error return values.
+
+
+
 
 
 ## The many-step error-prone build-test-deploy cycle
 
-TODO
+We have found that the testing process we are stuck in is extremely onerous,
+so much so that after a few rounds we get discouraged
+and walk away for a while.
+
+Here's more or less the steps we need to take for every change:
+
+- Build the game contract
+  - `cargo +nightly contract build --manifest-path/src/game/Cargo.toml`
+- Build the player level contract(s):
+  - `cargo +nightly contract build --manifest-path/src/example-levels/flipper/Cargo.toml`
+  - For now every level is just "flipper", but later each level will be different
+- Run a clean node:
+  - `canvas-node --dev --tmp -lerror,runtime=debug`
+- Clean the `canvas-ui` caches
+  - "Forget" any existing code bundles
+  - "Forget" any deployed contracts
+- Upload game contract with Alice account
+  - via `canvas-ui`
+- Deploy game contract with Alice account
+  - via `canvas-ui`
+- Upload each player level program with Bob account
+  - via `canvas-ui`
+  - Again, at the moment its just one flipper program
+- Deploy each player level contract with Bob account
+  - via `canvas-ui`
+- Execute game contract via Bob's account
+  - via `canvas-ui`
+  - Call `create_account` transaction
+    - Call then sign
+    - Check logging output
+  - Call `have_player_account` RPC
+    - Call
+  - Call `submit_level` transaction
+    - Call then sign
+    - Check logging output
+  - Call 'run_level' transaction
+    - Call
+    - Check logging output
+  - etc.
+
+All of these steps are manual,
+and involve flipping between the command line and the web browser.
+
+Obviously there's some automation we could add,
+scripting up some test cases.
+The big obstacle to that is that we don't know how to deploy
+and construct contracts from the command line yet;
+the features in `cargo-contract` that enable those two things
+are under an experimental feature flag,
+and compilation of those features is currently broken.
 
 
 
+## Testing ink contracts
 
+So far we have not written any unit tests for our contracts.
+In our experience, ink unit tests are limited,
+require some fiddly low-level glue code,
+and I am skeptical that they reasonably capture the behavior of
+the system running live.
 
+I am much more interested in integration testing on a dev chain,
+and intend to instead write scripts that run a chain,
+deploy contracts, call methods on those contracts, etc.
+
+We have not yet attempted to write such tests,
+but it is high on our list of priorities,
+particularly due to the extreme annoyance of all the manual steps
+that we are doing to test our changes today.
 
 
 
@@ -1557,3 +1640,5 @@ _just getting started_ is _a bad sign_.
 ## Tips
 
 - `canvas-node --dev --tmp -lerror,runtime=debug`
+- put logging in every error branch
+  - canvas-ui won't interpret errors returned during normal execution
