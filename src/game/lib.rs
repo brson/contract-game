@@ -6,23 +6,30 @@ use ink_lang as ink;
 
 #[ink::contract]
 mod game {
-    #[cfg(not(feature = "ink-as-dependency"))]
-    use ink_storage::collections::HashMap;
     use alloc::collections::BTreeMap;
     use alloc::format;
     use alloc::string::{String, ToString};
-    use ink_env::call::Selector;
     use ink_env::call::build_call;
-    use ink_env::DefaultEnvironment;
-    use ink_env::call::ExecutionInput;
     use ink_env::call::utils::ReturnType;
-    
+    use ink_env::call::ExecutionInput;
+    use ink_env::call::Selector;
+    use ink_env::DefaultEnvironment;
+    #[cfg(not(feature = "ink-as-dependency"))]
+    use ink_storage::collections::HashMap;
+
     #[ink(storage)]
     pub struct Game {
         player_accounts: HashMap<AccountId, PlayerAccount>,
     }
 
-    #[derive(Debug, Clone, scale::Encode, scale::Decode, ink_storage_derive::PackedLayout, ink_storage_derive::SpreadLayout)]
+    #[derive(
+        Debug,
+        Clone,
+        scale::Encode,
+        scale::Decode,
+        ink_storage_derive::PackedLayout,
+        ink_storage_derive::SpreadLayout,
+    )]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))] // todo: what is this?
     pub struct PlayerAccount {
         level: u32,
@@ -38,10 +45,10 @@ mod game {
         }
 
         fn level_up(&mut self) {
-            self.level +=1;            
-        }        
+            self.level += 1;
+        }
     }
-    
+
     #[derive(Debug, scale::Encode)]
     #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))] // todo: what is this?
     pub enum Error {
@@ -52,6 +59,7 @@ mod game {
         SubmittedGreaterLevel,
         LevelContractNotExists,
         LevelContractCallFailed,
+        LevelContractNotPass,
     }
 
     // Contract methods
@@ -89,7 +97,7 @@ mod game {
                 Err(Error::AccountExists)
             } else {
                 self.create_a_captain(caller)
-            }           
+            }
         }
 
         /// Retrieve caller's account information
@@ -99,8 +107,14 @@ mod game {
         /// - The account doesn't exist.
         #[ink(message)]
         pub fn get_player_account(&self, account: AccountId) -> Result<PlayerAccount, Error> {
-            ink_env::debug_println(&format!("Get player account {:?}", self.player_accounts.get(&account).cloned()));
-            self.player_accounts.get(&account).cloned().ok_or(Error::AccountNotExists)
+            ink_env::debug_println(&format!(
+                "Get player account {:?}",
+                self.player_accounts.get(&account).cloned()
+            ));
+            self.player_accounts
+                .get(&account)
+                .cloned()
+                .ok_or(Error::AccountNotExists)
         }
 
         /// Submit a program for a level puzzle
@@ -111,18 +125,30 @@ mod game {
         /// - Program fails verification.
         /// - Program account doesn't exist.
         #[ink(message)]
-        pub fn submit_level(&mut self, level: u32, level_contract: AccountId) -> Result<AccountId, Error> {
+        pub fn submit_level(
+            &mut self,
+            level: u32,
+            level_contract: AccountId,
+        ) -> Result<AccountId, Error> {
             let caller = self.env().caller();
-            
+
             if let Some(player_account) = self.player_accounts.get_mut(&caller) {
                 let account_current_level = player_account.level;
                 if level <= account_current_level {
-                    ink_env::debug_println(&format!("insert level {}, and contract {:?}", level, level_contract));
-                    player_account.level_contracts.insert(level, level_contract).ok_or(Error::SubmitLevelContractFailed)
+                    ink_env::debug_println(&format!(
+                        "insert level {}, and contract {:?}",
+                        level, level_contract
+                    ));
+                    player_account
+                        .level_contracts
+                        .insert(level, level_contract)
+                        .ok_or(Error::SubmitLevelContractFailed)
                 } else {
+                    ink_env::debug_println(&format!("Submitted Greater Level"));
                     Err(Error::SubmittedGreaterLevel)
                 }
             } else {
+                ink_env::debug_println(&format!("Account Not Exists"));
                 Err(Error::AccountNotExists)
             }
         }
@@ -143,7 +169,33 @@ mod game {
 
                 if let Some(level_contract) = player_account.level_contracts.get(&level).cloned() {
                     ink_env::debug_println(&format!("program id: {:?}", level_contract));
-                    dispatch_level(player_account, level, level_contract)                         
+
+                    let result = dispatch_level(level, level_contract);
+                    match result {
+                        Ok(is_succeed) => {
+                            if is_succeed {
+                                // only update level when the program level is equal to the current level(highest level)
+                                if level == player_account.level {
+                                    player_account.level_up();
+                                    ink_env::debug_println(&format!(
+                                        "updated_player_account: {:?}",
+                                        &player_account
+                                    ));
+                                }
+                                return Ok(true);
+                            } else {
+                                ink_env::debug_println(&format!(
+                                    "player's program doesn't pass: {:?}",
+                                    is_succeed
+                                ));
+                                return Err(Error::LevelContractNotPass);
+                            }
+                        }
+                        Err(e) => {
+                            ink_env::debug_println(&format!("dispatch_level failed: {:?}", e));
+                            return Err(e);
+                        }
+                    }
                 } else {
                     ink_env::debug_println(&format!("level_contract doesn't exist: {:?}", caller));
                     Err(Error::LevelContractNotExists)
@@ -151,60 +203,60 @@ mod game {
             } else {
                 ink_env::debug_println(&format!("player account doesn't exist: {:?}", caller));
                 Err(Error::AccountNotExists)
-            }        
+            }
         }
-
     }
 
     // Non-contract support methods
     impl Game {
         fn create_a_captain(&mut self, account: AccountId) -> Result<PlayerAccount, Error> {
             let new_player_account = PlayerAccount::default();
-            self.player_accounts.insert(account, new_player_account.clone());
+            self.player_accounts
+                .insert(account, new_player_account.clone());
             ink_env::debug_println(&format!("new player account {:?}", new_player_account));
 
             Ok(new_player_account)
         }
     }
 
-    fn dispatch_level(player_account: &mut PlayerAccount, level: u32, level_contract: AccountId) -> Result<bool, Error> {
-        ink_env::debug_println(&format!("dispatch level: {}, calling contract: {:?}", level, level_contract));
-        
+    fn dispatch_level(level: u32, level_contract: AccountId) -> Result<bool, Error> {
+        ink_env::debug_println(&format!(
+            "dispatch level: {}, calling contract: {:?}",
+            level, level_contract
+        ));
+
         match level {
-            0 => run_level_0_flipper(player_account, level_contract),
-            1 => run_level_1_flipper(player_account, level_contract),
-            2 => run_level_2_flipper(player_account, level_contract),
+            0 => run_level_0_flipper(level_contract),
+            1 => run_level_1_flipper(level_contract),
+            2 => run_level_2_flipper(level_contract),
             _ => return unreachable!(),
         }
     }
 
-    fn run_level_0_flipper(player_account: &mut PlayerAccount, level_contract: AccountId) -> Result<bool, Error> {
-        ink_env::debug_println(&format!("run_level_0_flipper, calling contract: {:?}", level_contract));
+    fn run_level_0_flipper(level_contract: AccountId) -> Result<bool, Error> {
+        ink_env::debug_println(&format!(
+            "run_level_0_flipper, calling contract: {:?}",
+            level_contract
+        ));
 
         let flipper_current_state = build_call::<DefaultEnvironment>()
             .callee(level_contract)
-            .exec_input(
-                ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF]))
-            )
+            .exec_input(ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF])))
             .returns::<ReturnType<bool>>()
             .fire();
-            
+
         if is_call_succeed(&flipper_current_state).unwrap() {
             ink_env::debug_println(&format!("verified flipper current state"));
 
             let flipper_set_state = build_call::<DefaultEnvironment>()
                 .callee(level_contract)
-                .exec_input(
-                    ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xEF]))
-                )
+                .exec_input(ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xEF])))
                 .returns::<ReturnType<bool>>()
                 .fire();
 
             let flipper_new_state = build_call::<DefaultEnvironment>()
                 .callee(level_contract)
-                .exec_input(
-                    ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF]))
-                )
+                .exec_input(ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF])))
                 .returns::<ReturnType<bool>>()
                 .fire();
             if is_call_succeed(&flipper_new_state).unwrap() {
@@ -212,47 +264,39 @@ mod game {
 
                 if flipper_current_state != flipper_new_state {
                     ink_env::debug_println(&format!("run_level_0_flipper call success"));
-
-                    // player's current level + 1
-                    player_account.level_up();
-                    ink_env::debug_println(&format!("player_account: {:?}", &player_account));
-                    
                     return Ok(true);
                 }
             }
         }
-         
+
         ink_env::debug_println(&format!("run_level_0_flipper call failed"));
         Err(Error::LevelContractCallFailed)
     }
 
-    fn run_level_1_flipper(player_account: &mut PlayerAccount, level_contract: AccountId) -> Result<bool, Error> {
-        ink_env::debug_println(&format!("run_level_1_flipper, calling contract: {:?}", level_contract));
+    fn run_level_1_flipper(level_contract: AccountId) -> Result<bool, Error> {
+        ink_env::debug_println(&format!(
+            "run_level_1_flipper, calling contract: {:?}",
+            level_contract
+        ));
 
         let flipper_current_state = build_call::<DefaultEnvironment>()
             .callee(level_contract)
-            .exec_input(
-                ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF]))
-            )
+            .exec_input(ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF])))
             .returns::<ReturnType<bool>>()
             .fire();
-            
+
         if is_call_succeed(&flipper_current_state).unwrap() {
             ink_env::debug_println(&format!("verified flipper current state"));
 
             let flipper_set_state = build_call::<DefaultEnvironment>()
                 .callee(level_contract)
-                .exec_input(
-                    ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xEF]))
-                )
+                .exec_input(ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xEF])))
                 .returns::<ReturnType<bool>>()
                 .fire();
 
             let flipper_new_state = build_call::<DefaultEnvironment>()
                 .callee(level_contract)
-                .exec_input(
-                    ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF]))
-                )
+                .exec_input(ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF])))
                 .returns::<ReturnType<bool>>()
                 .fire();
             if is_call_succeed(&flipper_new_state).unwrap() {
@@ -260,47 +304,39 @@ mod game {
 
                 if flipper_current_state != flipper_new_state {
                     ink_env::debug_println(&format!("run_level_1_flipper call success"));
-
-                    // player's current level + 1
-                    player_account.level_up();
-                    ink_env::debug_println(&format!("player_account: {:?}", &player_account));
-                    
                     return Ok(true);
                 }
             }
         }
-         
+
         ink_env::debug_println(&format!("run_level_1_flipper call failed"));
         Err(Error::LevelContractCallFailed)
     }
 
-    fn run_level_2_flipper(player_account: &mut PlayerAccount, level_contract: AccountId) -> Result<bool, Error> {
-        ink_env::debug_println(&format!("run_level_2_flipper, calling contract: {:?}", level_contract));
+    fn run_level_2_flipper(level_contract: AccountId) -> Result<bool, Error> {
+        ink_env::debug_println(&format!(
+            "run_level_2_flipper, calling contract: {:?}",
+            level_contract
+        ));
 
         let flipper_current_state = build_call::<DefaultEnvironment>()
             .callee(level_contract)
-            .exec_input(
-                ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF]))
-            )
+            .exec_input(ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF])))
             .returns::<ReturnType<bool>>()
             .fire();
-            
+
         if is_call_succeed(&flipper_current_state).unwrap() {
             ink_env::debug_println(&format!("verified flipper current state"));
 
             let flipper_set_state = build_call::<DefaultEnvironment>()
                 .callee(level_contract)
-                .exec_input(
-                    ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xEF]))
-                )
+                .exec_input(ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xEF])))
                 .returns::<ReturnType<bool>>()
                 .fire();
 
             let flipper_new_state = build_call::<DefaultEnvironment>()
                 .callee(level_contract)
-                .exec_input(
-                    ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF]))
-                )
+                .exec_input(ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF])))
                 .returns::<ReturnType<bool>>()
                 .fire();
             if is_call_succeed(&flipper_new_state).unwrap() {
@@ -308,16 +344,11 @@ mod game {
 
                 if flipper_current_state != flipper_new_state {
                     ink_env::debug_println(&format!("run_level_2_flipper call success"));
-
-                    // player's current level + 1
-                    player_account.level_up();
-                    ink_env::debug_println(&format!("player_account: {:?}", &player_account));
-                    
                     return Ok(true);
                 }
             }
         }
-         
+
         ink_env::debug_println(&format!("run_level_2_flipper call failed"));
         Err(Error::LevelContractCallFailed)
     }
@@ -328,14 +359,14 @@ mod game {
                 ink_env::debug_println(&format!("get method call success"));
                 ink_env::debug_println(&format!("get return value {}", heads_or_tails));
                 return Ok(true);
-            },
+            }
             Err(e) => {
                 ink_env::debug_println(&format!("get method call failed: {:?}", e));
                 return Err(Error::LevelContractCallFailed);
             }
-        }        
+        }
     }
-    
+
     #[cfg(test)]
     mod tests {
         use super::*;
