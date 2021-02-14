@@ -1155,6 +1155,7 @@ Here's more or less the steps we need to take for every change:
   - via `canvas-ui`
 - Execute game contract via Bob's account
   - via `canvas-ui`
+  - While correctly setting the arguments every time,
   - Call `create_account` transaction
     - Call then sign
     - Check logging output
