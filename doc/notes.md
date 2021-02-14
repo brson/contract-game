@@ -1161,9 +1161,10 @@ and involve flipping between the command line and the web browser.
 Obviously there's some automation we could add,
 scripting up some test cases.
 The big obstacle to that is that we don't know how to deploy
-and construct contracts from the command line yet;
-the features in `cargo-contract` that enable those two things
-are under an experimental feature flag,
+and construct contracts from the command line yet,
+nor how to call methods on a contract;
+the features in `cargo-contract` that enable some of those things
+are under an experimental `extrinsics` feature flag,
 and compilation of those features is currently broken.
 
 
