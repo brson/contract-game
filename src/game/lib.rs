@@ -10,6 +10,7 @@ mod game {
     use ink_storage::collections::HashMap;
     use alloc::collections::BTreeMap;
     use alloc::format;
+    use alloc::string::{String, ToString};
     use ink_env::call::Selector;
     use ink_env::call::build_call;
     use ink_env::DefaultEnvironment;
@@ -60,6 +61,12 @@ mod game {
             Game {
                 player_accounts: HashMap::new(),
             }
+        }
+
+        /// This is a sanity check for the application initialization code
+        #[ink(message)]
+        pub fn game_ready(&self) -> String {
+            "heck, yeah".to_string()
         }
 
         /// Query if the caller has an account

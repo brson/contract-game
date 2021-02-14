@@ -12,27 +12,43 @@
   <script src="js/script.js" type="module" async></script>
 </head>
 
-<div id="account-section">
+<section>
 
   <p>Node status: <span id="node-status">disconnected</span></p>
 
-  <p><button id="node-connect" type="button" disabled>Connect to node</button></p>
-
   <p>Endpoint: <input id="node-endpoint" value="ws://127.0.0.1:9944" disabled></input></p>
 
-  <!-- -->
+  <p><button id="node-connect" type="button" disabled>Connect to node</button></p>
+
+</section>
+
+<section>
+
+  <p>Game status: <span id="game-status">disconnected</span></p>
+
+  <p>Game account ID: <input id="game-account-id" value="unknown" disabled></input</p>
+
+  <p><button id="game-check" type="button" disabled>Check game account</button></p>
+
+</section>
+
+<section>
 
   <p>Keyring status: <span id="keyring-status">disconnected</span></p>
 
-  <p>Account ID: <input id="account-id" value="unknown"></input></p>
+  <p>Account Key: <input id="account-key" value="//Bob" disabled></input></p>
 
   <p><button id="keyring-connect" type="button" disabled>Connect to keyring</button></p>
 
-  <!-- -->
+</section>
 
-  <p><button id="create-game-account" type="button" disabled>Create game account</button></p>
+<section>
 
-  <p>Level: <span id="game-account-level">unknown</span></p>
+  <p>Player account status: <span id="player-account-status">unknown</span></p>
+
+  <p>Level: <span id="player-account-level">unknown</span></p>
+
+  <p><button id="create-player-account" type="button" disabled>Create player account</button></p>
 
 </div>
 

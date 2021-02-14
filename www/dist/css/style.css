@@ -9,6 +9,17 @@ body {
     padding: 2ch;
 }
 
+section {
+    border: 1px solid black;
+    margin: 1ch;
+    padding-left: 1ch;
+    padding-right: 1ch;
+}
+
+p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
 .msg-success {
     color: green;

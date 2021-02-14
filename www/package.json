@@ -4,13 +4,13 @@
     "main": "index.js",
     "license": "MIT",
     "dependencies": {
-        "@polkadot/api": "^3.3.2",
-        "@polkadot/api-contract": "^3.3.2",
-        "@polkadot/keyring": "^5.2.3",
+        "@polkadot/api": "^3.7.3",
+        "@polkadot/api-contract": "^3.7.3",
+        "@polkadot/keyring": "^5.5.2",
         "buffer": "^6.0.3",
         "crypto-browserify": "^3.12.0",
         "stream-browserify": "^3.0.0",
-        "webpack": "^5.11.1"
+        "webpack": "^5.21.1"
     },
     "scripts": {
         "start": "webpack serve",
@@ -18,7 +18,7 @@
         "watch": "webpack --watch"
     },
     "devDependencies": {
-        "webpack-cli": "^4.3.1",
-        "webpack-dev-server": "^3.11.1"
+        "webpack-cli": "^4.5.0",
+        "webpack-dev-server": "^3.11.2"
     }
 }
