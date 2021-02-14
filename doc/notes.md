@@ -33,6 +33,7 @@ we were using several times.
 
 - [Our project](#our-project)
 - [Terminology](#terminology)
+- [Summary](#summary)
 - [Implementing the contract](#implementing-the-contract)
   - [Debugging cross-contract calls](#debugging-cross-contract-calls)
   - [But first, updating our tools](#but-first-updating-our-tools)
@@ -44,6 +45,7 @@ we were using several times.
   - [Completing the level progression logic](#completing-the-level-progression-logic)
 - [The many-step, error-prone, build-deploy-test cycle](#the-many-step-error-prone-build-deploy-test-cycle)
 - [Testing ink contracts](#testing-ink-contracts)
+- [Attempting to deploy through the command line](#attempting-to-deploy-through-the-command-line)
 - [Connecting to our contract with polkadot-js](#connecting-to-our-contract-with-polkadot-js)
   - [Next attempt to get a simple UI working](#next-attempt-to-get-a-simple-ui-working)-
 - [Learnings and tips](#learnings-and-tips)
@@ -107,6 +109,11 @@ of disambiguating these concepts:
 Yeek.
 Maybe I'm overthinking this.
 
+
+
+## Summary
+
+TODO
 
 
 
@@ -1185,6 +1192,212 @@ We have not yet attempted to write such tests,
 but it is high on our list of priorities,
 particularly due to the extreme annoyance of all the manual steps
 that we are doing to test our changes today.
+
+
+
+## Attempting to deploy through the command line
+
+As mentioned above,
+the testing process for ink contracts requires
+too much manual work.
+
+One of the first things we need to be able to do to
+script some test cases is to deploy contracts from the command line.
+
+To do that, we need the experimental `extrinsics`
+feature of `cargo-contract`.
+I know the first time I looked at this feature I couldn't understand
+how to use it,
+and the last time I looked it failed to build,
+but I'm curious if I can improve my workflow by doing a little
+yak shaving, get this feature working.
+
+Start ing at `cargo-contract` commit 79dbcb655dd77701c79b2f1b459767ac3108cc58
+I try to build with the following command line:
+
+```
+cargo build --features=binaryen-as-dependency,extrinsics
+```
+
+And get the error:
+
+```
+error[E0603]: module `export` is private
+   --> /home/ubuntu/.cargo/registry/src/github.com-1ecc6299db9ec823/parity-multiaddr-0.9.6/src/onion_addr.rs:3:12
+    |
+3   | use serde::export::Formatter;
+    |            ^^^^^^ private module
+    |
+note: the module `export` is defined here
+   --> /home/ubuntu/.cargo/registry/src/github.com-1ecc6299db9ec823/serde-1.0.123/src/lib.rs:275:5
+    |
+275 | use self::__private as export;
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+   Compiling contract-metadata v0.2.0 (/home/ubuntu/substrate/cargo-contract/metadata)
+error: aborting due to previous error
+```
+
+This error is in `parity-multiaddr`,
+which seems to only be part of the build when the `extrinsics` feature
+is activated.
+From the error it seems like `parity-multiaddr` is just doing
+something bogus,
+so my first idea to fix it is to just see if the crate can be upgraded.
+
+I run `cargo update`:
+
+```
+$ cargo update -p parity-multiaddr
+    Updating crates.io index
+    Updating parity-multiaddr v0.9.6 -> v0.9.7
+```
+
+That does indeed update the lockfile to a new revision of parity-multiaddr,
+and running the build again succeeds in building that crate,
+but runs into a new error:
+
+```
+error[E0433]: failed to resolve: could not find `export` in `syn`
+  --> /home/ubuntu/.cargo/registry/src/github.com-1ecc6299db9ec823/frame-support-procedural-2.0.0/src/storage/parse.rs:50:37
+   |
+50 | impl<P: syn::export::ToTokens> syn::export::ToTokens for Opt<P> {
+   |                                     ^^^^^^ could not find `export` in `syn`
+
+error[E0433]: failed to resolve: could not find `export` in `syn`
+  --> /home/ubuntu/.cargo/registry/src/github.com-1ecc6299db9ec823/frame-support-procedural-2.0.0/src/storage/parse.rs:50:14
+   |
+50 | impl<P: syn::export::ToTokens> syn::export::ToTokens for Opt<P> {
+   |              ^^^^^^ could not find `export` in `syn`
+
+error: aborting due to 2 previous errors
+```
+
+Another peculiar build error.
+Both the previous and this one look to be the kind of errors that would
+arrive from semver-incompatible changes.
+If that _is_ the case, it's disappointing,
+and especially in these crates &mdash; `serde` and `syn`.
+Or maybe substrate was using these crates in a way
+that _used_ to work with old Rust revisions,
+but bugs in Rust's name resolution broke them.
+I don't know. Just speculating.
+This kind of breakage in the Rust ecosystem is annoying though.
+Rust isn't nearly as version-stable as it wishes it were.
+
+I take the same approach as to the last problem and try
+to upgrade `frame-support-procedural`:
+
+```
+$ cargo update -p frame-support-procedural
+    Updating crates.io index
+    Updating frame-support-procedural v2.0.0 -> v2.0.1
+```
+
+Another encouraging version bump.
+
+And again that fixes the build of that crate.
+
+But, and &mdash; *sigh* &mdash; _not_ the full cargo-contract build.
+What the hell happened since the last time this build configuration
+built successfully and now.
+
+Let's turn some CI on for this configuration.
+
+The new error:
+
+```
+error[E0282]: type annotations needed
+    --> /home/ubuntu/.cargo/registry/src/github.com-1ecc6299db9ec823/sp-arithmetic-2.0.0/src/fixed_point.rs:541:9
+     |
+541  |                   let accuracy = P::ACCURACY.saturated_into();
+     |                       ^^^^^^^^ consider giving `accuracy` a type
+...
+1595 | / implement_fixed!(
+1596 | |     FixedI64,
+1597 | |     test_fixed_i64,
+1598 | |     i64,
+...    |
+1601 | |     "_Fixed Point 64 bits signed, range = [-9223372036.854775808, 9223372036.854775807]_",
+1602 | | );
+     | |__- in this macro invocation
+     |
+     = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+```
+
+This one looks like the result of a type inference change in Rust.
+
+I take the same approach to fixing it:
+
+```
+$ cargo update -p sp-arithmetic
+    Updating crates.io index
+    Updating sp-arithmetic v2.0.0 -> v2.0.1
+```
+
+Clearly somebody in the substrate world has identified and fixed all these problems,
+and `cargo-contract` has just not been updated.
+I am doing that update.
+
+Again build, again progress.
+
+Again, a similar build error:
+
+```
+   Compiling sc-rpc-api v0.8.0
+error[E0282]: type annotations needed
+   --> /home/ubuntu/.cargo/registry/src/github.com-1ecc6299db9ec823/frame-system-2.0.0/src/offchain.rs:187:22
+    |
+186 |                 let public = generic_public.into();
+    |                     ------ consider giving `public` a type
+187 |                 let account_id = public.clone().into_account();
+    |                                  ^^^^^^ cannot infer type
+    |
+    = note: type must be known at this point
+```
+
+This time though `cargo update -p frame-system` does not give me
+the expected version bump from version 2.0.0.
+I check crates.io and see that there _is_ a newer version, 2.0.1.
+Why couldn't cargo automatically update it?
+
+I read the `cargo update --help` and add some more command line flags:
+
+```
+$ cargo update -p frame-system --precise 2.0.1
+    Updating crates.io index
+    Updating frame-support v2.0.0 -> v2.0.1
+    Updating frame-system v2.0.0 -> v2.0.1
+```
+
+So probably it didn't work before because `frame-support` needed to be bumped
+prior to bumping `frame-system`.
+
+Again I make build progress.
+
+Again the build fails. Again I fix it similarly.
+And again. And again.
+
+This time I have to do a version-incompatible bump
+of `substrate-subxt` from 0.13.0 to 0.14.0,
+by modifying the `cargo-contract` manifest,
+not the lockfile.
+
+What the hell caused all this type-system breakage?!
+
+I finally complete the build.
+Since some of this breakage looks like language-level breakage,
+I wonder about my own compiler.
+I see I have 1.49, from December,
+and run `rustup update` to install 1.50.
+
+I run the build again.
+It succeeds.
+
+I [submit a PR with my fixes][expr].
+
+[expr]: https://github.com/paritytech/cargo-contract/pull/175
+
 
 
 
