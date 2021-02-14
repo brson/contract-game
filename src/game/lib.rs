@@ -166,6 +166,7 @@ mod game {
         match level {
             0 => run_level_0_flipper(player_account, level_contract),
             1 => run_level_1_flipper(player_account, level_contract),
+            2 => run_level_2_flipper(player_account, level_contract),
             _ => return unreachable!(),
         }
     }
@@ -263,6 +264,54 @@ mod game {
         }
          
         ink_env::debug_println(&format!("run_level_1_flipper call failed"));
+        Err(Error::LevelContractCallFailed)
+    }
+
+    fn run_level_2_flipper(player_account: &mut PlayerAccount, level_contract: AccountId) -> Result<bool, Error> {
+        ink_env::debug_println(&format!("run_level_2_flipper, calling contract: {:?}", level_contract));
+
+        let flipper_current_state = build_call::<DefaultEnvironment>()
+            .callee(level_contract)
+            .exec_input(
+                ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF]))
+            )
+            .returns::<ReturnType<bool>>()
+            .fire();
+            
+        if is_call_succeed(&flipper_current_state).unwrap() {
+            ink_env::debug_println(&format!("verified flipper current state"));
+
+            let flipper_set_state = build_call::<DefaultEnvironment>()
+                .callee(level_contract)
+                .exec_input(
+                    ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xEF]))
+                )
+                .returns::<ReturnType<bool>>()
+                .fire();
+
+            let flipper_new_state = build_call::<DefaultEnvironment>()
+                .callee(level_contract)
+                .exec_input(
+                    ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF]))
+                )
+                .returns::<ReturnType<bool>>()
+                .fire();
+            if is_call_succeed(&flipper_new_state).unwrap() {
+                ink_env::debug_println(&format!("verify flipper new state"));
+
+                if flipper_current_state != flipper_new_state {
+                    ink_env::debug_println(&format!("run_level_2_flipper call success"));
+
+                    // player's current level + 1
+                    player_account.level_up();
+                    ink_env::debug_println(&format!("player_account: {:?}", &player_account));
+                    
+                    return Ok(true);
+                }
+            }
+        }
+         
+        ink_env::debug_println(&format!("run_level_2_flipper call failed"));
         Err(Error::LevelContractCallFailed)
     }
 
