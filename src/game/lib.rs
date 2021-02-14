@@ -125,27 +125,21 @@ mod game {
         /// - Program fails verification.
         /// - Program account doesn't exist.
         #[ink(message)]
-        pub fn submit_level(
-            &mut self,
-            level: u32,
-            level_contract: AccountId,
-        ) -> Result<(), Error> {
+        pub fn submit_level(&mut self, level: u32, level_contract: AccountId) -> Result<(), Error> {
             let caller = self.env().caller();
 
             if let Some(player_account) = self.player_accounts.get_mut(&caller) {
                 let account_current_level = player_account.level;
-                if level <= account_current_level {
+                if level > account_current_level {
+                    ink_env::debug_println(&format!("Submitted Greater Level"));
+                    Err(Error::SubmittedGreaterLevel)
+                } else {
                     ink_env::debug_println(&format!(
                         "insert level {}, and contract {:?}",
                         level, level_contract
                     ));
-                    player_account
-                        .level_contracts
-                        .insert(level, level_contract);
+                    player_account.level_contracts.insert(level, level_contract);
                     Ok(())
-                } else {
-                    ink_env::debug_println(&format!("Submitted Greater Level"));
-                    Err(Error::SubmittedGreaterLevel)
                 }
             } else {
                 ink_env::debug_println(&format!("Account Not Exists"));
@@ -173,8 +167,10 @@ mod game {
                     let result = dispatch_level(level, level_contract);
                     match result {
                         Ok(_) => {
-                            // only update level when the program level is equal to the current level(highest level)
-                            if level == player_account.level {
+                            // only update level when
+                            // - the program level is equal to the player's current (highest) level
+                            // - current level isn't the Game's highest level (set as 2)
+                            if level == player_account.level && level != 2 {
                                 player_account.level_up();
                                 ink_env::debug_println(&format!(
                                     "updated_player_account: {:?}",
@@ -217,6 +213,7 @@ mod game {
             level, level_contract
         ));
 
+        // Game's highest level is 2
         match level {
             0 => run_level_0_flipper(level_contract),
             1 => run_level_1_flipper(level_contract),
@@ -236,12 +233,12 @@ mod game {
             .exec_input(ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF])))
             .returns::<ReturnType<bool>>()
             .fire();
-        
+
         let flipper_current_state = match flipper_current_state {
             Err(e) => {
                 ink_env::debug_println(&format!("flipper_current state failed: {:?}", e));
                 return Err(Error::LevelContractCallFailed);
-            },
+            }
             Ok(f) => f,
         };
 
@@ -257,7 +254,7 @@ mod game {
             ink_env::debug_println(&format!("flipper_current state failed: {:?}", e));
             return Err(Error::LevelContractCallFailed);
         }
-        
+
         let flipper_new_state = build_call::<DefaultEnvironment>()
             .callee(level_contract)
             .exec_input(ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF])))
@@ -268,10 +265,10 @@ mod game {
             Err(e) => {
                 ink_env::debug_println(&format!("flipper_new_state failed"));
                 return Err(Error::LevelContractCallFailed);
-            },
+            }
             Ok(f) => f,
         };
-        
+
         ink_env::debug_println(&format!("verify flipper new state"));
 
         if flipper_current_state == flipper_new_state {
@@ -299,7 +296,16 @@ mod game {
             level_contract
         ));
 
-        run_level_0_flipper(level_contract)
+        let result = run_level_0_flipper(level_contract);
+        match result {
+            Err(e) => Err(e),
+            Ok(_) => {
+                ink_env::debug_println(&format!(
+                    "Congratulations, Captain! You have passed all the levels!"
+                ));
+                Ok(())
+            }
+        }
     }
 
     #[cfg(test)]
