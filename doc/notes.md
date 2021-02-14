@@ -32,7 +32,7 @@ we were using several times.
 [polkadot.js]: https://github.com/polkadot-js
 
 - [Our project](#our-project)
-  - [Terminology](#terminology)
+- [Terminology](#terminology)
 - [Implementing the contract](#implementing-the-contract)
   - [Debugging cross-contract calls](#debugging-cross-contract-calls)
   - [But first, updating our tools](#but-first-updating-our-tools)
@@ -40,15 +40,39 @@ we were using several times.
   - [Another try at cross-contract calls with `CallBuilder`](#another-try-at-cross-contract-calls-with-callbuilder)
   - [Wait what's this? Some weird new issue!](#wait-whats-this-some-weird-new-issue)
   - [Another try at cross-contract calls with `CallBuilder`, take 2](#another-try-at-cross-contract-calls-with-callbuilder-take-2)
+  - [Let's just get to the finish line](#lets-just-get-to-the-finish-line)
+  - [Completing the level progression logic](#completing-the-level-progression-logic)
+- [The many-step, error-prone, build-deploy-test cycle](#the-many-step-error-prone-build-deploy-test-cycle)
+- [Testing ink contracts](#testing-ink-contracts)
 - [Connecting to our contract with polkadot-js](#connecting-to-our-contract-with-polkadot-js)
+  - [Next attempt to get a simple UI working](#next-attempt-to-get-a-simple-ui-working)-
+- [Learnings and tips](#learnings-and-tips)
 - [Some thoughts](#some-thoughts)
   - [First, some hopefulness](#first-some-hopefulness)
   - [Next, some venting](#next-some-venting)
   - [It's ok, I'm learning](#its-ok-im-learning)
 
 
-
 ## Our project
+
+Our project is a game for teaching ink smart contract programming.
+It runs on a substrate blockchain (canvas for now),
+where players submit their own contracts in order to
+complete a progression of levels.
+
+We like this project because it accomplishes multiple goals for us:
+
+- It lets _us_ learn smart contract programming
+- It lets us _write_ about what we learn
+- It creates a _product_ that others may find useful
+- It may be worthy of a _grant_ to continue the work
+
+Our goal for this initial sprint has been to create
+a prototype that demonstrates the basic functionality
+of submitting and running levels,
+and progressing through levels.
+
+Also to write about how we struggled and what we learned.
 
 
 ## Terminology
@@ -81,7 +105,7 @@ Just re-reading this I am struck at the immediate complexity
 of disambiguating these concepts:
 "player level contract account ID"?
 Yeek.
-Maybe I'm overthinging this.
+Maybe I'm overthinking this.
 
 
 
@@ -1021,7 +1045,7 @@ whether I run it,
 whether she runs it.
 
 
-## Let's just get to the finish line
+### Let's just get to the finish line
 
 Ok, after that last experience we took a multi-week break,
 and [tried out Dfinity][dft].
@@ -1066,7 +1090,7 @@ TODO
 
 
 
-## Aimee finishes the level progression logic
+### Completing the level progression logic
 
 While I've been goofing off and hacking on other projects,
 Aimee has continued trying to complete our proof of concept contract,
@@ -1086,7 +1110,7 @@ and our UI can interpret error return values.
 
 
 
-## The many-step error-prone build-test-deploy cycle
+## The many-step, error-prone, build-deploy-test cycle
 
 We have found that the testing process we are stuck in is extremely onerous,
 so much so that after a few rounds we get discouraged
@@ -1356,7 +1380,7 @@ Somebody tell me what I'm doing wrong. Please.
 
 
 
-## Next attempt to get a simple UI working
+### Next attempt to get a simple UI working
 
 Ok, this is at least a month after the last attempt at hacking on the UI.
 In the meantime, we spent a lot of time debugging our contract,
@@ -1453,9 +1477,9 @@ TODO
     });
 ```
 
-My "//Bob" address is wrong.
+My "//Bob" address is wrong when it appears in my JavaScript code.
 It was because I wasn't specifying a "sr25519" keyring.
-I thought I read it was the default but I had to specify it per
+I thought I read it was the default but I had to specify it as
 
 ```JavaScript
         keyring = new polkadot.Keyring({ type: "sr25519" });
@@ -1467,6 +1491,34 @@ than the one on the Polkadot block explorer for my devnet.
 
 [krdcs]: https://polkadot.js.org/docs/keyring/start/create
 
+I believe the reason the polkadot.js docs seem to lead me
+to write code that is sometimes incompatible with canvas
+is that canvas is using a several-months-old revision of substrate.
+Unfortunately, simply reading the canvas-ui code looking
+for examples is pretty tough since that code is
+extremely abstract, built on react components.
+The few times I looked through it trying to figure out
+how to use the polkadot.js APIs I just gave up,
+and continued guessing and searching through substrate GitHub
+issues until I stumbled on the answers I needed.
+
+
+
+## Learnings and Tips
+
+- The ink learning curve is steep &mdash;
+  expect for the first few weeks to be tough
+- canvas-node is pretty far behind substrate master.
+  This manifests in the polkadot.js API, where instructions
+  assume more recent runtime versions.
+- In aggregate, the various tools involved in ink development
+  seem to break pretty often. It's not clear if its best to
+  try to keep up with the master branches of these projects or not.
+- There is almost no debuggabality for ink contracts.
+  Use `debug_println` everywhere.
+- put logging in every error branch
+  - canvas-ui won't interpret errors returned during normal execution
+- `canvas-node --dev --tmp -lerror,runtime=debug`
 
 
 ## Some thoughts
@@ -1638,10 +1690,3 @@ _just getting started_ is _a bad sign_.
    account id (presumably because it wasn't running at the time
    the event was dispatched);
    so we didn't know what else to do but restart our devnet.
-
-
-## Tips
-
-- `canvas-node --dev --tmp -lerror,runtime=debug`
-- put logging in every error branch
-  - canvas-ui won't interpret errors returned during normal execution
