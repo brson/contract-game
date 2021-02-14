@@ -161,7 +161,7 @@ mod game {
         /// - Caller has no submiss for this level.
         /// - Submitted program doesn't implement required contracts.
         #[ink(message)]
-        pub fn run_level(&mut self, level: u32) -> Result<bool, Error> {
+        pub fn run_level(&mut self, level: u32) -> Result<(), Error> {
             let caller = self.env().caller();
 
             if let Some(player_account) = self.player_accounts.get_mut(&caller) {
@@ -172,24 +172,16 @@ mod game {
 
                     let result = dispatch_level(level, level_contract);
                     match result {
-                        Ok(is_success) => {
-                            if is_success {
-                                // only update level when the program level is equal to the current level(highest level)
-                                if level == player_account.level {
-                                    player_account.level_up();
-                                    ink_env::debug_println(&format!(
-                                        "updated_player_account: {:?}",
-                                        &player_account
-                                    ));
-                                }
-                                return Ok(true);
-                            } else {
+                        Ok(_) => {
+                            // only update level when the program level is equal to the current level(highest level)
+                            if level == player_account.level {
+                                player_account.level_up();
                                 ink_env::debug_println(&format!(
-                                    "player's program doesn't pass: {:?}",
-                                    is_success
+                                    "updated_player_account: {:?}",
+                                    &player_account
                                 ));
-                                return Err(Error::LevelContractNotPass);
                             }
+                            return Ok(());
                         }
                         Err(e) => {
                             ink_env::debug_println(&format!("dispatch_level failed: {:?}", e));
@@ -219,7 +211,7 @@ mod game {
         }
     }
 
-    fn dispatch_level(level: u32, level_contract: AccountId) -> Result<bool, Error> {
+    fn dispatch_level(level: u32, level_contract: AccountId) -> Result<(), Error> {
         ink_env::debug_println(&format!(
             "dispatch level: {}, calling contract: {:?}",
             level, level_contract
@@ -233,7 +225,7 @@ mod game {
         }
     }
 
-    fn run_level_0_flipper(level_contract: AccountId) -> Result<bool, Error> {
+    fn run_level_0_flipper(level_contract: AccountId) -> Result<(), Error> {
         ink_env::debug_println(&format!(
             "run_level_0_flipper, calling contract: {:?}",
             level_contract
@@ -288,10 +280,11 @@ mod game {
         }
 
         ink_env::debug_println(&format!("run_level_0_flipper call success"));
-        Ok(true)
+
+        Ok(())
     }
 
-    fn run_level_1_flipper(level_contract: AccountId) -> Result<bool, Error> {
+    fn run_level_1_flipper(level_contract: AccountId) -> Result<(), Error> {
         ink_env::debug_println(&format!(
             "run_level_1_flipper, calling contract: {:?}",
             level_contract
@@ -300,7 +293,7 @@ mod game {
         run_level_0_flipper(level_contract)
     }
 
-    fn run_level_2_flipper(level_contract: AccountId) -> Result<bool, Error> {
+    fn run_level_2_flipper(level_contract: AccountId) -> Result<(), Error> {
         ink_env::debug_println(&format!(
             "run_level_2_flipper, calling contract: {:?}",
             level_contract
