@@ -141,9 +141,9 @@ mod game {
             if let Some(player_account) = self.player_accounts.get_mut(&caller) {
                 ink_env::debug_println(&format!("game account: {:?}", player_account));
 
-                if let Some(level_contract) = player_account.level_contracts.get(&level) {
+                if let Some(level_contract) = player_account.level_contracts.get(&level).cloned() {
                     ink_env::debug_println(&format!("program id: {:?}", level_contract));
-                    dispatch_level(player_account, level, level_contract.clone())                         
+                    dispatch_level(player_account, level, level_contract)                         
                 } else {
                     ink_env::debug_println(&format!("level_contract doesn't exist: {:?}", caller));
                     Err(Error::LevelContractNotExists)
