@@ -14,15 +14,16 @@ So in the time since that last exploration,
 to hack on that will guide us to learn more about
 Substrate/Ink development.
 
-This report will be about our experiences in the
-first few weeks of implementing that project.
+[Aimee]: https://github.com/aimeedeer
+
+This report will be about our experiences beginning to implement that project.
 It is broadly divided into three sections:
 contract implementation with Ink,
 client implementation with [polkadot.js],
 and some concluding thoughts.
 
 This project began on 2021/01/01,
-and continued in small bursts through 2021/02/13.
+and continued in small bursts through 2021/03/01.
 Along the way we changed the exact revisions of the software
 we were using several times.
 
@@ -31,36 +32,39 @@ we were using several times.
 [`ink!`]: https://github.com/paritytech/ink
 [polkadot.js]: https://github.com/polkadot-js
 
-- [Our project](#our-project)
-- [Terminology](#terminology)
-- [Summary](#summary)
-- [Implementing the contract](#implementing-the-contract)
-  - [Debugging cross-contract calls](#debugging-cross-contract-calls)
-  - [But first, updating our tools](#but-first-updating-our-tools)
-  - [And then debugging cross-contract calls](#and-then-debugging-cross-contract-calls)
-  - [Another try at cross-contract calls with `CallBuilder`](#another-try-at-cross-contract-calls-with-callbuilder)
-  - [Wait what's this? Some weird new issue!](#wait-whats-this-some-weird-new-issue)
-  - [Another try at cross-contract calls with `CallBuilder`, take 2](#another-try-at-cross-contract-calls-with-callbuilder-take-2)
-  - [Let's just get to the finish line](#lets-just-get-to-the-finish-line)
-  - [Completing the level progression logic](#completing-the-level-progression-logic)
-- [The many-step, error-prone, build-deploy-test cycle](#the-many-step-error-prone-build-deploy-test-cycle)
-- [Testing ink contracts](#testing-ink-contracts)
-- [Attempting to deploy through the command line](#attempting-to-deploy-through-the-command-line)
-- [Connecting to our contract with polkadot-js](#connecting-to-our-contract-with-polkadot-js)
-  - [Next attempt to get a simple UI working](#next-attempt-to-get-a-simple-ui-working)-
-- [Learnings and tips](#learnings-and-tips)
-- [Some thoughts](#some-thoughts)
-  - [First, some hopefulness](#first-some-hopefulness)
-  - [Next, some venting](#next-some-venting)
-  - [It's ok, I'm learning](#its-ok-im-learning)
+- [Our project](#user-content-our-project)
+- [Terminology](#user-content-terminology)
+- [Summary](#user-content-summary)
+- [Implementing the contract](#user-content-implementing-the-contract)
+  - [Debugging, etc.](#user-content-debugging-etc)
+  - [Debugging cross-contract calls](#user-content-debugging-cross-contract-calls)
+  <!-- - [But first, updating our tools](#user-content-but-first-updating-our-tools)-->
+  <!-- - [And then debugging cross-contract calls](#user-content-and-then-debugging-cross-contract-calls)-->
+  - [Debug-printing the environment doesn't work](#user-content-debug-printing-the-environment-doesnt-work)
+  - [Wait what's this? Some weird new issue!](#user-content-wait-whats-this-some-weird-new-issue)
+  - [Another try at cross-contract calls with `CallBuilder`](#user-content-another-try-at-cross-contract-calls-with-callbuilder)
+  - [Let's just get to the finish line](#user-content-lets-just-get-to-the-finish-line)
+  - [Completing the level progression logic](#user-content-completing-the-level-progression-logic)
+- [The many-step, error-prone, build-deploy-test cycle](#user-content-the-many-step-error-prone-build-deploy-test-cycle)
+- [Testing ink contracts](#user-content-testing-ink-contracts)
+- [Attempting to deploy through the command line](#user-content-attempting-to-deploy-through-the-command-line)
+- [Connecting to our contract with polkadot-js](#user-content-connecting-to-our-contract-with-polkadot-js)
+  - [Next attempt to get a simple UI working](#user-content-next-attempt-to-get-a-simple-ui-working)-
+- [Learnings and tips](#user-content-learnings-and-tips)
+- [Some thoughts](#user-content-some-thoughts)
+  - [First, some hopefulness](#user-content-first-some-hopefulness)
+  - [Next, some venting](#user-content-next-some-venting)
+  - [It's ok, I'm learning](#user-content-its-ok-im-learning)
 
 
 ## Our project
 
 Our project is a game for teaching ink smart contract programming.
-It runs on a substrate blockchain (canvas for now),
+It runs on a substrate blockchain ([canvas] for now),
 where players submit their own contracts in order to
 complete a progression of levels.
+
+[canvas]: https://github.com/paritytech/canvas-node
 
 We like this project because it accomplishes multiple goals for us:
 
@@ -72,9 +76,14 @@ We like this project because it accomplishes multiple goals for us:
 Our goal for this initial sprint has been to create
 a prototype that demonstrates the basic functionality
 of submitting and running levels,
-and progressing through levels.
+and progressing through levels;
+both the contracts and the UI.
 
 Also to write about how we struggled and what we learned.
+
+The source for this project lives at
+
+> [https://github.com/brson/contract-game](https://github.com/brson/contract-game)
 
 
 ## Terminology
@@ -90,7 +99,10 @@ and used in this blog post.
   These can represent things, but for our purposes so far
   they represent the accounts of people and the accounts of contracts.
   Sometimes referred to abstractly as just "account".
-- _Method selector_ - TODO
+- _Method selector_ - Under the hook, ink methods are called
+  via RPC, and methods don't really have names, but instead magic
+  numbers. We'll need to use these explicitly to call other contracts
+  dynamically.
 
 ### Game terms
 
@@ -119,31 +131,84 @@ TODO
 
 ## Implementing the contract
 
-ink_storage::HashMap doesn't implement Clone.
+We use `cargo contract new` to create our new,
+then immediately delete most of the contents,
+leaving just the contract module and its decorating
+`ink::contract` attribute:
 
-We try to put an `ink_storage::HashMap` into a custom `PlayerAccount` struct
+```rust
+use ink_lang as ink;
+
+#[ink::contract]
+mod game {
+}
+```
+
+Most everything we write will go inside this module.
+
+The first thing we think about when writing our contract is the
+state represented in the account.
+This state is called "storage" in substrate.
+Or it lives in "storage".
+It lives on the blockchain.
+
+We begin by defining our storage requirements as simply
+a map from the substrate account IDs owned by individual players
+to the game-specific state for theat player.
+
+We write it
+
+```rust
+#[ink(storage)]
+pub struct Game {
+    player_accounts: HashMap<AccountId, PlayerAccount>,
+}
+```
+
+The substrate `AccountId` represents multiple important pieces for us:
+users have accounts, and contracts on the blockchains have acounts.
+
+In ink, `AccountId`, along with some other types, is just magically in scope,
+probably thanks to the `#[ink:contract]` macro.
+
+And that `HashMap` is not the standard `HashMap`:
+it is a special ink `HashMap` that stores items on the blockchain.
+It is imported like:
+
+```rust
+#[cfg(not(feature = "ink-as-dependency"))]
+use ink_storage::collections::HashMap;
+```
+
+We don't yet understand what the `ink-as-dependency` feature means;
+we are just copying this attribute from examples.
+
+`PlayerAccount` is our own type that holds our game-specific
+player account state.
+We try to put an `ink_storage::HashMap` into the `PlayerAccount` struct,
 inside another `ink_storage::HashMap`, inside our `Game` storage type.
 
 Something like
 
 ```rust
-    #[ink(storage)]
-    pub struct Game {
-        player_accounts: ink_storage::HashMap<AccountId, PlayerAccount>,
-    }
+#[ink(storage)]
+pub struct Game {
+    player_accounts: ink_storage::HashMap<AccountId, PlayerAccount>,
+}
 
-    #[derive(Debug, Clone, scale::Encode, scale::Decode, ink_storage_derive::PackedLayout, ink_storage_derive::SpreadLayout)]
-    pub struct PlayerAccount {
-        level: u32,
-        level_programs: ink_storage::HashMap<u32, AccountId>,
-    }
+#[derive(Debug, Clone, scale::Encode, scale::Decode,
+         ink_storage_derive::PackedLayout, ink_storage_derive::SpreadLayout)]
+pub struct PlayerAccount {
+    level: u32,
+    level_programs: ink_storage::HashMap<u32, AccountId>,
+}
 ```
 
 It doesn't work, with a bunch of errors about traits like `WrapperTypeEncode`
 not being implemented for types like `ink_storage::HashMap`.
 
 We look at the ink examples and don't see any using nested collection
-types in their storage type.
+types in their storage types.
 Instead they all use a "flat" data model.
 I don't really want to do that because it will be harder to maintain
 the invariants I want.
@@ -153,22 +218,27 @@ so instead of nesting `ink_storage::HashMap`s inside each other,
 we use a `BTreeMap` instead, like
 
 ```rust
-    #[ink(storage)]
-    pub struct Game {
-        player_accounts: ink_storage::HashMap<AccountId, PlayerAccount>,
-    }
+#[ink(storage)]
+pub struct Game {
+    player_accounts: ink_storage::HashMap<AccountId, PlayerAccount>,
+}
 
-    #[derive(Debug, Clone, scale::Encode, scale::Decode, ink_storage_derive::PackedLayout, ink_storage_derive::SpreadLayout)]
-    pub struct PlayerAccount {
-        level: u32,
-        level_programs: BTreeMap<u32, AccountId>,
-    }
+#[derive(Debug, Clone, scale::Encode, scale::Decode,
+         ink_storage_derive::PackedLayout, ink_storage_derive::SpreadLayout)]
+pub struct PlayerAccount {
+    level: u32,
+    level_programs: BTreeMap<u32, AccountId>,
+}
 ```
 
 I imagine this will be inefficient,
 but for now we want our code to be readable,
 not efficient.
 
+We can easily imagine the purpose of the `scale::Encode` and `scale::Decode`
+derives,
+but don't yet understand the `PackedLayout`
+and `SpreadLayout` derives.
 
 For each level of our game,
 our game contract needs to call a player's "level contract".
@@ -176,13 +246,57 @@ So each of our levels defines a contract interface,
 and each player implements that interface in their own
 contract for the level.
 
-When we start trying to figure out how to call another
-arbitrary contract,
-using only some interface,
+That's what we store in the `level_programs` map:
+a mapping from a level number to the account ID of the contract,
+owned by the player,
+that implements a solution to that level.
+
+In the UI,
+we imagine the initial game flow will begin
+with tasks like connecting the wallet,
+checking whether the player has an account,
+creating player accounts,
+and registering level contracts.
+
+We write a few initial methods to accomplish
+these tasks without many problems,
+and test them in [canvas-ui].
+
+[canvas-ui]: https://github.com/paritytech/canvas-ui
+
+Here's `create_player_account`:
+
+```rust
+#[ink(message)]
+pub fn create_player_account(&mut self) -> Result<PlayerAccount, Error> {
+    let caller = self.env().caller();
+
+    if self.have_player_account(caller) {
+        Err(Error::AccountExists)
+    } else {
+        self.create_player(caller)
+    }
+}
+```
+
+`have_player_account` and `get_player_account` are similarly obvious.
+
+After a bit of success,
+we decide that the next problem for us to solve
+is to call our players' level contracts.
+
+These are contracts that conform to an interface defined by our game,
+but have implementations defined by our players,
+so we know we're going to have to call these contracts dynamically
+by their interface.
+
+When we start trying to figure this out,
 we run into a lack of examples and documentation.
 
 
 
+
+### Debugging, etc.
 
 While incrementally adding features,
 experimenting with ink APIs,
@@ -207,10 +321,6 @@ Now I am running my canvas node, from source, with the command
 ```
 cargo run -- --dev --tmp -lerror,runtime=debug
 ```
-
-
-
-
 
 We have Alice construct our game contract,
 and want to test having that contract
@@ -284,20 +394,16 @@ and "forgetting" everything every time I restart canvas-node.
 At least the polkadot explorer says "not on-chain" for code
 hashes that don't actually exist.
 
-Another note: there are many opportunities in both UIs to
-"add a code hash", but it seems like this option is useless
-unless you also provide the contract metadata.
-TODO why this sucks
-
 After some experimenting I learn that
 constructing a contract creates a new account;
 that is, a contract is not associated with the account
 of the user that creates it; a contract has its own account.
 
-
-
 We execute transactions in the canvas-ui, but no
 events seem to register in the explorer ui.
+
+Sometimes canvas-ui doesn't know how to interpret the results
+of a method call and gives no feedback.
 
 We're going to have to add logging _everywhere_
 to have any clue what the hell is going on.
@@ -332,6 +438,8 @@ And failed.
 
 For days.
 
+We took a long break.
+
 We were discouraged,
 and it was hard to come back to this problem,
 but we can't make any progress without solving it.
@@ -339,6 +447,7 @@ but we can't make any progress without solving it.
 So that's today's mission.
 
 
+<!--
 ### But first, updating our tools
 
 Since the canvas tools are immature,
@@ -370,6 +479,8 @@ This though makes me wonder if I can update canvas's substrate revision
 It is something I am curious to attempt,
 but doesn't seem prudent right now,
 since presumably most everybody else using canvas-node is using the substrate revisions in Cargo.lock.
+
+(Note that since this was written, `canvas-node` has received an update to a more recent version of substrate).
 
 `cargo-canvas` has updates and I install them from the source directory with
 
@@ -407,7 +518,7 @@ It takes a long time to start up though,
 and I was hoping I could do some of that webpacking or whatever ahead of time.
 
 While I'm tinkering with building my tooling,
-I wonder if I can install an updated [`subkey`] tool from source.
+I wonder if I can install an updated [`subkey`][subkeycommand] tool from source.
 
 I `cd` into my substrate source directory and run
 
@@ -418,11 +529,15 @@ cargo install --path bin/utils/subkey/
 
 It works. I have updated tools.
 Enough procrastinating; time to solve problems.
+-->
+
+
+
+<!--### And then debugging cross-contract calls-->
 
 
 
 
-### And then debugging cross-contract calls
 
 What happens when we try to call a method via `CallBuilder` is
 that `canvas-node` logs (when `-lruntime=debug` is passed on the command line):
@@ -458,27 +573,27 @@ our best guess right now is that we just didn't spend enough gas
 to make the call.
 
 For our experiment today
-
-We create a repo just for testing `CallBuilder`:
+we create a repo just for testing `CallBuilder`:
 
 > https://github.com/Aimeedeer/game-test
 
 Our `CallBuilder` right now looks like:
 
 ```rust
-            let return_value: bool = build_call::<DefaultEnvironment>()
-                .callee(program_id) 
-                .gas_limit(50)
-                .transferred_value(10)
-                .exec_input(
-                    ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF]))
-                )
-                .returns::<ReturnType<bool>>()
-                .fire()
-                .unwrap();
+let return_value: bool = build_call::<DefaultEnvironment>()
+    .callee(program_id) 
+    .gas_limit(50)
+    .transferred_value(10)
+    .exec_input(
+        ExecutionInput::new(Selector::new([0xDE, 0xAD, 0xBE, 0xFF]))
+    )
+    .returns::<ReturnType<bool>>()
+    .fire()
+    .unwrap();
 ```
 
 The `program_id` is the `AccountId` of the flipper contract,
+which we are using as a test game level contract,
 provided as an argument to the caller.
 The selector is one that we've given to the flipper's `get`
 method with the `selector` attribute.
@@ -536,37 +651,41 @@ get the contract to execute successfully.
 I ask some questions in the ink matrix channel,
 and I feel extremely frustrated.
 
-> Every combination of attempts I make results in either an "OutOfGas" or "ContractTrapped" error
+> "Every combination of attempts I make results in either an "OutOfGas" or "ContractTrapped" error"
 
-> We're very confused about units and gas and weight. How many underlying integer units are in a "unit" (how divisible is a unit)? Does "Max Gas Allowed (M)" mean the amount of millions of "unit"s payed from the caller to run the contract?
+> "We're very confused about units and gas and weight. How many underlying integer units are in a "unit" (how divisible is a unit)? Does "Max Gas Allowed (M)" mean the amount of millions of "unit"s payed from the caller to run the contract?"
 
-> When our default devnet accounts say alice has "1,152" "units" does that man she doesn't have the millions of gas necessary to execute a contract?
+> "When our default devnet accounts say alice has "1,152" "units" does that man she doesn't have the millions of gas necessary to execute a contract?"
 
 Robin responds:
 
-> To clarify: cross-contract calls are possible using the CallBuilder API that should ideally not be used since it is a rather low-level abraction API. Instead users should try using the interfaces allowed for by the ink_lang macros.
+> "To clarify: cross-contract calls are possible using the CallBuilder API that should ideally not be used since it is a rather low-level abraction API. Instead users should try using the interfaces allowed for by the ink_lang macros."
 
-> Users generally won't need to use the CallBuilder API for their everyday smart contracts; it is only really required for niche use cases that you can inspect in our multi_sig example contract.
+> "Users generally won't need to use the CallBuilder API for their everyday smart contracts; it is only really required for niche use cases that you can inspect in our multi_sig example contract."
 
-> The cross-chain calling is something completely different and requires support in lower-levels of abstraction than ink! itself.
+> "The cross-chain calling is something completely different and requires support in lower-levels of abstraction than ink! itself."
 
-> I am sorry to hear about your confusing user experiences with the CallBuilder API. Answering the question "how much gas is enough?" isn't easy since it depends on the chain, its configuration and also on which version of Substrate it is based (defaults). E.g. for the Canvas network we resolved that approx 5 CANs should be sufficient to operate smart contracts for a week on our chain. The Alice test account normally has plenty of funds and will likely not require any more if the chain configuration for gas prices is sane.
+> "I am sorry to hear about your confusing user experiences with the CallBuilder API. Answering the question "how much gas is enough?" isn't easy since it depends on the chain, its configuration and also on which version of Substrate it is based (defaults). E.g. for the Canvas network we resolved that approx 5 CANs should be sufficient to operate smart contracts for a week on our chain. The Alice test account normally has plenty of funds and will likely not require any more if the chain configuration for gas prices is sane."
 
-This doesn't quite answer most of my questions,
-besides asserting that the default accounts should have enough "units" to pay for gas.
+This doesn't quite resolve my confusion,
+but now I know the default accounts should have enough "units" to pay for gas.
 I still don't have a clue how divisible units are or whether gas is paid in millions.
 And if I'm not supposed to use `CallBuilder` to make cross-contract calls,
 then I don't know what I am supposed to use instead.
 
 I ask:
 
-> @Robin I don't see in ink_lang how to call a cross-contract method for contracts that I don't a-priori have the implementation for. I know the signature of the method I want to call, and the account id of the contract i want to call, but don't know the concrete interface. Is there a way to make that call without callbuilder?
+> "@Robin I don't see in ink_lang how to call a cross-contract method for contracts that I don't a-priori have the implementation for. I know the signature of the method I want to call, and the account id of the contract i want to call, but don't know the concrete interface. Is there a way to make that call without callbuilder?"
 
 During this time we do figure out one thing we were doing wrong:
 we were calling `unwrap` on the results of executing our cross-contract call,
 and _that_ was what was triggering the `ContractTrapped` error.
 When we stopped unwrapping and printed the result we could see
 that the call was returning a `Err(Decode(Error))`.
+
+
+
+### Debug-printing the environment doesn't work
 
 In the meantime I decide to debug-log _everything_ in the environment I can to try to understand
 what units are what,
@@ -595,21 +714,21 @@ so I do some work reducing this error.
 I create a contract that consists only of this:
 
 ```rust
-    #[ink(storage)]
-    pub struct Game { }
+#[ink(storage)]
+pub struct Game { }
 
-    impl Game {
-        #[ink(constructor)]
-        pub fn default() -> Self {
-            Game { }
-        }
+impl Game {
+   #[ink(constructor)]
+   pub fn default() -> Self {
+       Game { }
+   }
 
-        #[ink(message)]
-        pub fn run_game_test(&mut self) {
-            ink_env::debug_println(&format!("env: {:?}", self.env()));
-            ink_env::debug_println(&format!("weight_to_fee(gas_left): {}", self.env().weight_to_fee(self.env().gas_left() as _)));
-        }
-    }
+   #[ink(message)]
+   pub fn run_game_test(&mut self) {
+       ink_env::debug_println(&format!("env: {:?}", self.env()));
+       ink_env::debug_println(&format!("weight_to_fee(gas_left): {}", self.env().weight_to_fee(self.env().gas_left() as _)));
+   }
+}
 ```
 
 It can't be uploaded. Doing so results in the above `DispatchError`.
@@ -618,7 +737,7 @@ If I remove the _second_ `debug_println` I can upload and execute this contract.
 So this method now is doing nothing but 
 
 ```rust
-            ink_env::debug_println(&format!("env: {:?}", self.env()));
+ink_env::debug_println(&format!("env: {:?}", self.env()));
 ```
 
 It logs
@@ -632,7 +751,7 @@ So not useful.
 Changing the method to do only
 
 ```rust
-            ink_env::debug_println(&format!("weight_to_fee(gas_left): {}", self.env().weight_to_fee(self.env().gas_left() as _)));
+ink_env::debug_println(&format!("weight_to_fee(gas_left): {}", self.env().weight_to_fee(self.env().gas_left() as _)));
 ```
 
 Results in a contract that again can't be uploaded.
@@ -666,20 +785,12 @@ So that's it.
 Time for a break.
 
 
-### Another try at cross-contract calls with `CallBuilder`
 
-This will be our 4th attempt to successfully call another conract with `CallBuilder`.
-
-In the meantime Robin responded to more of my questions in chat.
-
-From that I learned that I should definitely be able to do what I'm attempting,
-but more importantly that I can set the gas limit to 0 in a cross-contract call,
-and that will just make the gas limit unlimited.
-That will remove one of the hurdles we've had during development &mdash;
-figuring out how much gas to provide in the canvas-ui.
 
 
 ### Wait what's this? Some weird new issue!
+
+When I resume hacking I run into another issue.
 
 I try to run `cargo +nightly contract build` on our game contract,
 and it fails like this:
@@ -691,7 +802,6 @@ Caused by:
     too many version components
 ```
 
-This is super annoying.
 It seems to be coming from `cargo-contract`,
 as just running `cargo +nightly build`
 doesn't trigger it.
@@ -720,7 +830,7 @@ since the last time I hacked on this project.
 So something seems to have changed in how Rust's
 LLVM version is reported.
 
-While super annoying _right now_,
+While annoying,
 this kind of thing is not terribly uncommon to run into
 when working with Rust,
 especially nightly Rust.
@@ -739,7 +849,7 @@ reported to upstream Rust.
 I search the Rust issue tracker and don't see
 any reports that sound related.
 
-Looking at the git log from my current HEAD to origin/master
+Looking at `cargo-contract`'s git log from my current HEAD to origin/master
 I see commits that look like they probably fix this issue:
 
 ```
@@ -788,7 +898,17 @@ cargo install --path .
 ```
 
 
-### Another try at cross-contract calls with `CallBuilder`, take 2
+### Another try at cross-contract calls with `CallBuilder`
+
+This will be our 4th attempt to successfully call another conract with `CallBuilder`.
+
+In the meantime Robin responded to more of my questions in chat.
+
+From that I learned that I should definitely be able to do what I'm attempting,
+but more importantly that I can set the gas limit to 0 in a cross-contract call,
+and that will just make the gas limit unlimited.
+That will remove one of the hurdles we've had during development &mdash;
+figuring out how much gas to provide in the canvas-ui.
 
 Again,
 we are working [off of a repo][gtr] that just
@@ -1727,6 +1847,11 @@ issues until I stumbled on the answers I needed.
 
 ## Learnings and Tips
 
+- The [polkadot explorer][pex] can connect to your devnet.
+  Click on the "Polkadot" dropdown menu in the top left,
+  then the "development" dropdown;
+  select "local node",
+  then click "switch".
 - The ink learning curve is steep &mdash;
   expect for the first few weeks to be tough
 - canvas-node is pretty far behind substrate master.
@@ -1740,6 +1865,11 @@ issues until I stumbled on the answers I needed.
 - put logging in every error branch
   - canvas-ui won't interpret errors returned during normal execution
 - `canvas-node --dev --tmp -lerror,runtime=debug`
+- Install the [subkey command][subkeycommand].
+- With `CallBuilder`, just set `gas_limit` to 0 during development:
+  it will use as much gas as needed,
+  and on the canvas chain,
+  you should have more than enough gas in the test accounts.
 
 
 ## Some thoughts
