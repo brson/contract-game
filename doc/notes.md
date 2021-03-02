@@ -984,6 +984,8 @@ this has a simple signature:
 pub fn fire(self) -> Result<(), Error>
 ```
 
+This method is returning the error I am currently stuck on.
+
 `Error` here is the [`ink_env::Error`] enum,
 which, as we would hope,
 has the variant we've seen called `Decode`.
