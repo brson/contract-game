@@ -42,7 +42,7 @@ we were using several times.
   <!-- - [And then debugging cross-contract calls](#user-content-and-then-debugging-cross-contract-calls)-->
   - [Debug-printing the environment doesn't work](#user-content-debug-printing-the-environment-doesnt-work)
   - [Wait what's this? Some weird new issue!](#user-content-wait-whats-this-some-weird-new-issue)
-  - [A `CallBuilder` miracle](#user-content-a-callbuilder-miracle)
+  - [Errors in ink, and a `CallBuilder` miracle](#user-content-errors-in-ink-and-a-callbuilder-miracle)
   - [Let's just get to the finish line](#user-content-lets-just-get-to-the-finish-line)
   - [Completing the level progression logic](#user-content-completing-the-level-progression-logic)
 - [The many-step, error-prone, build-deploy-test cycle](#user-content-the-many-step-error-prone-build-deploy-test-cycle)
@@ -898,7 +898,7 @@ cargo install --path .
 ```
 
 
-### A `CallBuilder` miracle
+### Errors in ink, and a `CallBuilder` miracle
 
 This will be our 4th attempt to successfully call another conract with `CallBuilder`.
 
@@ -1118,7 +1118,11 @@ Oh well, let's prove it by doing the test.
 
 I run the contract.
 
-**A MIRACLE OCCURS.**
+&nbsp;
+
+_**`· A MIRACLE HAPPENS ·`**_
+
+&nbsp;
 
 The `CallBuilder` call worked. No error. Our logs say so:
 
@@ -1856,14 +1860,14 @@ issues until I stumbled on the answers I needed.
 
 ## Learnings and Tips
 
+- The ink learning curve is steep &mdash;
+  expect for the first few weeks to be tough
 - The [polkadot explorer][pex] can connect to your devnet.
   Click on the "Polkadot" dropdown menu in the top left,
   then the "development" dropdown;
   select "local node",
   then click "switch".
-- The ink learning curve is steep &mdash;
-  expect for the first few weeks to be tough
-- canvas-node is pretty far behind substrate master.
+- TODO canvas-node is pretty far behind substrate master.
   This manifests in the polkadot.js API, where instructions
   assume more recent runtime versions.
 - In aggregate, the various tools involved in ink development
@@ -1871,6 +1875,10 @@ issues until I stumbled on the answers I needed.
   try to keep up with the master branches of these projects or not.
 - There is almost no debuggabality for ink contracts.
   Use `debug_println` everywhere.
+- At least some substrate errors (`scale::Error`),
+  within the wasm contract sandbox,
+  do not carry dynamic metadata that would be useful to help interpret them,
+  and that is available when compiled outside of wasm.
 - put logging in every error branch
   - canvas-ui won't interpret errors returned during normal execution
 - `canvas-node --dev --tmp -lerror,runtime=debug`
