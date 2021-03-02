@@ -1,6 +1,6 @@
 "use strict";
 
-let devnetGameAccountId = "5DFeyd6tx1kLqUCKNX4ME9nq2eRBjCWu8NG3AQfkXpXBZ7FY";
+let devnetGameAccountId = "5Cxg3R1zhemY3aKeHdGg8bjAfJSuuC63YDP3om79TXJTG4L8";
 let contractAbiUrl = "game-metadata.json";
 
 let polkadot = null;
@@ -169,7 +169,6 @@ function initPage() {
 
         try {
             await createPlayerAccount(api, gameAbi, gameAccountId, keypair);
-            // TODO load and display account info per loadPlayerAccount
         } catch (error) {
             setInnerMessageFail(playerAccountStatusSpan, error);
             createPlayerAccountButton.disabled = false;

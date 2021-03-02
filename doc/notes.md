@@ -1599,8 +1599,6 @@ On https://polkadot.js.org/docs/api/examples/promise/ it says
 But there are no "folders" in this documentation.
 Is there a link to actual, complete, ready-to-run source code I'm missing?
 
-I'm quite frustrated.
-
 I additionally ask in the "#ink" channel if there's a basic
 yarn template for using the polkadot JS API's.
 
@@ -1618,7 +1616,7 @@ So complex.
 I am going to try instead using `webpack-dev-server` for my `yarn start` command.
 
 I eventually follow the [webpack "Getting Started" guide][wpgs].
-I'm real rak shaving now.
+I'm real yak shaving now.
 
 [wpgs]: https://webpack.js.org/guides/getting-started/
 
@@ -1676,7 +1674,7 @@ three polyfills in my `webpack.config.js`:
 
 [wri]: https://webpack.js.org/configuration/resolve/
 
-Hours and hours go by...
+... Hours and hours go by as I Google how to do basic webpack stuff ...
 
 I'm using webpack 5,
 which doesn't do a bunch of node polyfills when it compiles
@@ -1737,7 +1735,7 @@ before loading my webpack bundle:
 
 Yup.
 
-Somebody tell me what I'm doing wrong. Please.
+Somebody please tell me what I'm doing wrong.
 
 
 
@@ -1823,10 +1821,18 @@ My application code is in `js/script.js`.
 I made it a module so that I can freely use globals inside of it.
 Otherwise I don't know much about JavaScript modules.
 
+Using mostly just the [polkadot.js docs][pjsdocs] I quickly
+figure out how to
 
+* connect to a node,
+* connect to a keyring, at least for the `//Alice` and `//Bob` test accounts,
+* call a method on the game contract
+
+[pjsdocs]: https://polkadot.js.org/docs/
 
 
 TODO
+
 
 ```
     const api = await polkadot.ApiPromise.create({
@@ -1838,9 +1844,12 @@ TODO
     });
 ```
 
-My "//Bob" address is wrong when it appears in my JavaScript code.
+I run into problems with calling contracts,
+and it turns out that
+my "//Bob" address is wrong &mdash; when I print it,
+it is not the same address that I see for Bob in the polkadot.js explorer.
 It was because I wasn't specifying a "sr25519" keyring.
-I thought I read it was the default but I had to specify it as
+I thought "sr25519" was the default but I had to specify it as
 
 ```JavaScript
         keyring = new polkadot.Keyring({ type: "sr25519" });
