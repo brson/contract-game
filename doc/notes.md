@@ -42,7 +42,7 @@ we were using several times.
   <!-- - [And then debugging cross-contract calls](#user-content-and-then-debugging-cross-contract-calls)-->
   - [Debug-printing the environment doesn't work](#user-content-debug-printing-the-environment-doesnt-work)
   - [Wait what's this? Some weird new issue!](#user-content-wait-whats-this-some-weird-new-issue)
-  - [Another try at cross-contract calls with `CallBuilder`](#user-content-another-try-at-cross-contract-calls-with-callbuilder)
+  - [A `CallBuilder` miracle](#user-content-a-callbuilder-miracle)
   - [Let's just get to the finish line](#user-content-lets-just-get-to-the-finish-line)
   - [Completing the level progression logic](#user-content-completing-the-level-progression-logic)
 - [The many-step, error-prone, build-deploy-test cycle](#user-content-the-many-step-error-prone-build-deploy-test-cycle)
@@ -898,7 +898,7 @@ cargo install --path .
 ```
 
 
-### Another try at cross-contract calls with `CallBuilder`
+### A `CallBuilder` miracle
 
 This will be our 4th attempt to successfully call another conract with `CallBuilder`.
 
@@ -1015,11 +1015,10 @@ It suddenly occurs to me that I don't know where
 to find the Substrate API docs.
 I know the Ink API docs are self hosted in one place,
 and not on docs.rs.
-All the Substrate docs should be on docs.rs.
-It's just expected by Rust programmers.
+Rust API docs should be on docs.rs &mdash;
+it's just expected by Rust programmers.
 
-I go to the Substrate dev docs place that I know,
-substrate.dev,
+I go to substrate.dev,
 and click the prominent "API Reference" link.
 It leads to yet another URL:
 
@@ -1030,7 +1029,7 @@ Navigating to that URL then redirects to ...
 > https://substrate.dev/rustdocs/v2.0.1/sc_service/index.html
 
 Okay... is `sc_service` really the first page
-a user should read about Substrate API docs.
+a user should read about Substrate API docs?
 I don't know enough to say "no",
 but it's definitely not what I'm looking for.
 
@@ -1040,6 +1039,7 @@ or `parity-scale-codec` in the top search bar.
 I search for `scale` and see the top hits:
 
 
+|name|description|
 |--|--|
 |sp_runtime::traits::Scale|Multiply and divide by a number that isn't necessarily … |
 |alga::general::ComplexField::scale|Multiplies this complex number by factor.|
@@ -1050,7 +1050,6 @@ I search for `scale` and see the top hits:
 |statrs::distribution::Pareto::scale|Returns the scale of the Pareto distribution|
 |statrs::distribution::StudentsT::scale|Returns the scale of the student's t-distribution|
 |statrs::distribution::Weibull::scale|Returns the scale of the weibull distribution|
-|--|--|
 
 Junk.
 
@@ -1075,7 +1074,7 @@ in tons of accidental complexity.)
 
 Finally,
 after quite a lot of digging we find
-the [`scale::Error` docs][sed]
+the [`scale::Error` docs][sed].
 
 [sed]: https://substrate.dev/rustdocs/v2.0.1/parity_scale_codec/struct.Error.html
 
@@ -1115,13 +1114,19 @@ Probably not. Yeah, after reading the implementation of `scale::Error`,
 we're not going to get any useful info out of it.
 Oh well, let's prove it by doing the test.
 
-Holy shit.
+I run the contract.
 
-The call worked. No error. Our logs say so:
+**A MIRACLE OCCURS.**
+
+The `CallBuilder` call worked. No error. Our logs say so:
 
 ```
 DEBUG tokio-runtime-worker runtime:return value Ok(false)
 ```
+
+This is a huge suprise,
+as we made no changes to the `CallBuilder` invocation
+that we are aware of.
 
 WTF did we do differently this time!?
 
@@ -1158,7 +1163,7 @@ that has also _failed for her_,
 many times.
 
 After like 10 minutes of setup,
-in which canvus-ui fails us in at least 2 new ways (**),
+in which canvas-ui fails us in at least 2 new ways (**),
 she executes our test game contract.
 
 I cross my fingers,
@@ -1170,6 +1175,8 @@ so we can continue to debug what we did wrong.
 The old contract succeeds again,
 whether I run it,
 whether she runs it.
+
+
 
 
 ### Let's just get to the finish line
