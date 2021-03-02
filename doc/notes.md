@@ -1134,7 +1134,7 @@ This is a huge suprise,
 as we made no changes to the `CallBuilder` invocation
 that we are aware of.
 
-WTF did we do differently this time!?
+What did we do differently this time!?
 
 I stash the changes I've made to the contract today,
 and try again,
@@ -1182,10 +1182,11 @@ The old contract succeeds again,
 whether I run it,
 whether she runs it.
 
+We step away and have a drink.
 
 
 
-### Let's just get to the finish line
+### Completing the level progression logic
 
 Ok, after that last experience we took a multi-week break,
 and [tried out Dfinity][dft].
@@ -1200,37 +1201,10 @@ where completing one level opens up the next level.
 
 Since it has been a while,
 I am again going to update my tools.
-
-- `canvas-ui` - The frontend. I find that I am not using my own build of this program,
-  but instead of the [hosted version][hcui]. Still, I keep this updated. I make a note
-  to try using my own build today.
-- `cargo-contract` - This time I build it with `--features=extrinsics`, with the goal
-  of attempting to deploy from the command-line, as the many-step process of setting
-  up our contracts for testing is becoming a major source of confusion and frustration.
-  It fails to build with `cargo install` initially, until I remember that `install`
-  needs to be paired with `--locked` so that the lockfile is used.
-  Even with `--locked` the build fails in a different way.
-  This is commit 2f7b165e464b8f494c27095488d41da416d8f41e.
-  It does build without `--features=extrinsics`, so it seems the `extrinsics` feature
-  is just broken right now.
-- `canvas-node` - Again, there have been no changes to `canvas-node` since November.
-  I decide that I want to get the benefits of any substrate changes, so I run
-  `cargo update` to force upgrades of the dependencies. It doesn't build,
-  so I just keep using an ancient build.
-
-[hcui]: https://paritytech.github.io/canvas-ui/#/
-
 Since the last time I built `cargo-contract` something has changed,
 and it no longer works without `wasm-opt` installed.
 I dig into and and find out I need to build it with `--features=binaryen-as-dependency`
 so that it will bundle the `wasm-opt` tool.
-
-TODO
-
-
-
-
-### Completing the level progression logic
 
 While I've been goofing off and hacking on other projects,
 Aimee has continued trying to complete our proof of concept contract,
@@ -1239,12 +1213,25 @@ so that when a player succeeds at level 0,
 they get access to level 1,
 etc.
 
+
+
+TODO
+
+
+
+
+Since we managed to get `CallBuilder` working,
+we continue to have no problems with it,
+and still don't know what we were ever doing wrong.
+
 `canvas-ui` when executing a transaction doesn't show anything about the return value,
 and in particular doesn't show anything when our methods return `Err`.
 To compensate for this we find it necessary to add logging to every exit condition
 so that we can figure out what happened.
 This won't be as crucial once we are exercising the contract via our own UI,
-and our UI can interpret error return values.
+and our UI can interpret our own error return values.
+
+
 
 
 
