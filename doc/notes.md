@@ -1540,18 +1540,29 @@ Someday.
 
 ## Connecting to our contract with polkadot-js
 
-It's strange that the JS compononts are "polkadot"-branded,
-where so many other things in this ecosystem are "substrate"-branded.
+While Aimee was mostly working on the contract code,
+I started figuring out how to interact with substrate
+via JavaScript,
+in the browser,
+so we could prototype the UI.
 
-I try not to use npm unless I have to.
-Trying to create a simple frontend using plain HTML and JavaScript.
-All the documentation for the polkadot JS API assumes the use of node/yarn.
-I am trying to figure out how to use webpack to package up @polkadot/api so I can use it outside npm,
+The library for interacting with substrate nodes is
+[polkadot.js].
+
+It's strange that the JS compononts are "polkadot"-branded,
+where so many other things in this ecosystem are "substrate"-branded,
+but I imagine that's a historical artifact of the way polkadot evolved.
+
+I am hoping I can write the frontend as a simple static web site.
+I try not to use npm unless I have to,
+and prefer to create a simple frontend using plain HTML and JavaScript.
+All the documentation for the polkadot JS API assumes the use of npm/yarn,
+which I would rather not.
+I am trying to figure out how to use webpack to package up `@polkadot/api` so I can use it outside npm,
 but don't know how.
 
 I have previously succeeded in this with web3.js and ipfs.js,
-but don't really remember how,
-and don't see any obvious evidence that the polkadot APIs are ready to webpack.
+but don't really remember how.
 
 I ask in #ink:matrix.parity.io
 
@@ -1562,7 +1573,7 @@ I ask in #ink:matrix.parity.io
 
 In the meantime I give up trying to package polkadot-js for use
 outside of npm,
-and try to set up a yarn app that will let me import the the library
+and try to set up a yarn app that will let me import the library
 in the expected way.
 
 As someone mostly unfamiliar with npm I immediately encounter more problems.
