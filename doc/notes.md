@@ -43,13 +43,14 @@ we were using several times.
   - [Debug-printing the environment doesn't work](#user-content-debug-printing-the-environment-doesnt-work)
   - [Wait what's this? Some weird new issue!](#user-content-wait-whats-this-some-weird-new-issue)
   - [Errors in ink, and a `CallBuilder` miracle](#user-content-errors-in-ink-and-a-callbuilder-miracle)
-  - [Let's just get to the finish line](#user-content-lets-just-get-to-the-finish-line)
   - [Completing the level progression logic](#user-content-completing-the-level-progression-logic)
 - [The many-step, error-prone, build-deploy-test cycle](#user-content-the-many-step-error-prone-build-deploy-test-cycle)
 - [Testing ink contracts](#user-content-testing-ink-contracts)
 - [Attempting to deploy through the command line](#user-content-attempting-to-deploy-through-the-command-line)
 - [Connecting to our contract with polkadot-js](#user-content-connecting-to-our-contract-with-polkadot-js)
-  - [Next attempt to get a simple UI working](#user-content-next-attempt-to-get-a-simple-ui-working)-
+  - [Next attempt to get a simple UI working](#user-content-next-attempt-to-get-a-simple-ui-working)
+  - [Final UI touches](#user-content-final-ui-touches)
+- [We fail to complete the prototype](#user-content-we-fail-to-complete-the-prototype)
 - [Learnings and tips](#user-content-learnings-and-tips)
 - [Some thoughts](#user-content-some-thoughts)
   - [First, some hopefulness](#user-content-first-some-hopefulness)
@@ -480,7 +481,7 @@ It is something I am curious to attempt,
 but doesn't seem prudent right now,
 since presumably most everybody else using canvas-node is using the substrate revisions in Cargo.lock.
 
-(Note that since this was written, `canvas-node` has received an update to a more recent version of substrate).
+*Note that since this was written, `canvas-node` has received an update to a more recent version of substrate*.
 
 `cargo-canvas` has updates and I install them from the source directory with
 
@@ -1231,7 +1232,7 @@ so that we can figure out what happened.
 This won't be as crucial once we are exercising the contract via our own UI,
 and our UI can interpret our own error return values.
 
-
+TODO
 
 
 
@@ -1247,12 +1248,12 @@ the knowledge that the test cycle is going to be so tedius
 often makes us procrastinate and do something else instead.
 
 Since we were unable to discover what we were doing wrong
-when trying to use `CallBuilder` &mdash; our code ultimately
-just started working on its own,
+when trying to use `CallBuilder` (our code ultimately
+just started working on its own)
 I am inclined to attribute our extended confusion to human
 errors in this build-deploy-test cycle.
 
-Here's more or less the steps we need to take for every change:
+Here are more-or-less the steps we need to take for every change:
 
 - Build the game contract
   - `cargo +nightly contract build --manifest-path/src/game/Cargo.toml`
@@ -1290,12 +1291,13 @@ Here's more or less the steps we need to take for every change:
   - etc.
 
 All of these steps are manual,
-and involve flipping between the command line and the web browser.
+and involve flipping between the command line and the web browser,
+and a lot of mouse-clicking.
 
 Obviously there's some automation we could add,
 scripting up some test cases.
 The big obstacle to that is that we don't know how to deploy
-and construct contracts from the command line yet,
+and instantiate contracts from the command line yet,
 nor how to call methods on a contract;
 the features in `cargo-contract` that enable some of those things
 are under an experimental `extrinsics` feature flag,
@@ -1310,8 +1312,10 @@ In our experience, ink unit tests are limited,
 require some fiddly low-level glue code,
 and I am skeptical that they reasonably capture the behavior of
 the system running live.
+I am sure unit tests will be useful the more software I write,
+and as ink matures.
 
-I am much more interested in integration testing on a dev chain,
+I am more interested in integration testing on a dev chain,
 and intend to instead write scripts that run a chain,
 deploy contracts, call methods on those contracts, etc.
 
@@ -1322,7 +1326,10 @@ that we are doing to test our changes today.
 
 
 
-## Attempting to deploy through the command line
+## Fixing a build failure in `cargo-contract`
+
+*Note: this entire section is just an exercise in updating
+ut-of-date dependencies in cargo.*
 
 As mentioned above,
 the testing process for ink contracts requires
@@ -1426,7 +1433,7 @@ Another encouraging version bump.
 And again that fixes the build of that crate.
 
 But, and &mdash; *sigh* &mdash; _not_ the full cargo-contract build.
-What the hell happened since the last time this build configuration
+I wonder what happened since the last time this build configuration
 built successfully and now.
 
 Let's turn some CI on for this configuration.
@@ -1510,8 +1517,6 @@ of `substrate-subxt` from 0.13.0 to 0.14.0,
 by modifying the `cargo-contract` manifest,
 not the lockfile.
 
-What the hell caused all this type-system breakage?!
-
 I finally complete the build.
 Since some of this breakage looks like language-level breakage,
 I wonder about my own compiler.
@@ -1525,6 +1530,10 @@ I [submit a PR with my fixes][expr].
 
 [expr]: https://github.com/paritytech/cargo-contract/pull/175
 
+I do not get around to attempting to script up
+parts of the testing process.
+
+Someday.
 
 
 
@@ -1842,6 +1851,11 @@ The few times I looked through it trying to figure out
 how to use the polkadot.js APIs I just gave up,
 and continued guessing and searching through substrate GitHub
 issues until I stumbled on the answers I needed.
+
+
+
+## Final UI touches
+
 
 
 
