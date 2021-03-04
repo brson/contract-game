@@ -1169,7 +1169,7 @@ that has also _failed for her_,
 many times.
 
 After like 10 minutes of setup,
-in which canvas-ui fails us in at least 2 new ways (**),
+in which canvas-ui fails us in at least 2 new ways (††),
 she executes our test game contract.
 
 I cross my fingers,
@@ -1183,6 +1183,27 @@ whether I run it,
 whether she runs it.
 
 We step away and have a drink.
+
+> (††) "canvas-ui fails us in at least two new ways":
+>
+> 1) During contract upload,
+     the status spinner spun forever.
+     Re-navigating to the "upload" tab
+     revealed that the contract had been successfully uploaded.
+     After this, the "deploy" tab showed the same contract uploaded
+     twice, both with the same code hash.
+>
+> 2) We told canvas-ui to "forget" a deployed contract,
+     with the intent of re-deploying it.
+     Upon attempted redeployment we received an error,
+     and the canvas-node logs said something along the lines
+     of "live contract already exists".
+     Unfortunately we did not have that contract's account id,
+     the error message didn't tell us,
+     the polkadot.js/app explorer couldn't tell us that contract's
+     account id (presumably because it wasn't running at the time
+     the event was dispatched);
+     so we didn't know what else to do but restart our devnet.
 
 
 
@@ -1865,6 +1886,16 @@ to a more recent substrate.
 
 ## We fail to complete the prototype
 
+That is as far as we got before we lost our enthusiasm
+and got completely distracted with other projects.
+
+I am not happy to say it,
+but the overriding experience here was one of frustration.
+
+We'll probably come back to this project,
+and probably continue hacking with substrate/ink,
+but at the moment I want to hack on projects that
+are more immediately satisfying.
 
 
 
@@ -1872,14 +1903,15 @@ to a more recent substrate.
 
 - The ink learning curve is steep &mdash;
   expect for the first few weeks to be tough
+- Substrate is in rapid development,
+  and you will need to be committed to keep up with
+  its changes. Beyond my own experience, I have
+  heard this mentioned by many substrate developers.
 - The [polkadot explorer][pex] can connect to your devnet.
   Click on the "Polkadot" dropdown menu in the top left,
   then the "development" dropdown;
   select "local node",
   then click "switch".
-- TODO canvas-node is pretty far behind substrate master.
-  This manifests in the polkadot.js API, where instructions
-  assume more recent runtime versions.
 - In aggregate, the various tools involved in ink development
   seem to break pretty often. It's not clear if its best to
   try to keep up with the master branches of these projects or not.
@@ -2048,23 +2080,3 @@ _just getting started_ is _a bad sign_.
 
 (**)
 
-"canvas-ui fails us in at least two new ways":
-
-1) During contract upload,
-   the status spinner spun forever.
-   Re-navigating to the "upload" tab
-   revealed that the contract had been successfully uploaded.
-   After this, the "deploy" tab showed the same contract uploaded
-   twice, both with the same code hash.
-
-2) We told canvas-ui to "forget" a deployed contract,
-   with the intent of re-deploying it.
-   Upon attempted redeployment we received an error,
-   and the canvas-node logs said something along the lines
-   of "live contract already exists".
-   Unfortunately we did not have that contract's account id,
-   the error message didn't tell us,
-   the polkadot.js/app explorer couldn't tell us that contract's
-   account id (presumably because it wasn't running at the time
-   the event was dispatched);
-   so we didn't know what else to do but restart our devnet.
