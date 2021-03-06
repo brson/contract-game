@@ -49,7 +49,6 @@ we were using several times.
 - [Attempting to deploy through the command line](#user-content-attempting-to-deploy-through-the-command-line)
 - [Connecting to our contract with polkadot-js](#user-content-connecting-to-our-contract-with-polkadot-js)
   - [Next attempt to get a simple UI working](#user-content-next-attempt-to-get-a-simple-ui-working)
-  - [Final UI touches](#user-content-final-ui-touches)
 - [We fail to complete the prototype](#user-content-we-fail-to-complete-the-prototype)
 - [Learnings and tips](#user-content-learnings-and-tips)
 - [Some thoughts](#user-content-some-thoughts)
@@ -1725,17 +1724,17 @@ I also have this lovely garbage in my HTML header
 before loading my webpack bundle:
 
 ```html
-  <script>
-    let global = window;
-    let process = {
-      "versions": null
-    };
-  </script>
+<script>
+  let global = window;
+  let process = {
+    "versions": null
+  };
+</script>
 ```
 
 Yup.
 
-Somebody please tell me what I'm doing wrong.
+Obviously I don't know what I'm doing here.
 
 
 
@@ -1743,7 +1742,7 @@ Somebody please tell me what I'm doing wrong.
 
 Ok, this is at least a month after the last attempt at hacking on the UI.
 In the meantime, we spent a lot of time debugging our contract,
-and also did that experiment with Dfinity.
+and also did [that experiment with Dfinity][dft].
 
 Today my goal is to execute transactions in our contract using
 the test accounts.
@@ -1796,9 +1795,9 @@ and reconnecting to the substrate node between pages.
 The script loading for this page looks like this:
 
 ```html
-  <script src="js/polyfill.js"></script>
-  <script src="js/bundle.js" async></script>
-  <script src="js/script.js" type="module" async></script>
+<script src="js/polyfill.js"></script>
+<script src="js/bundle.js" async></script>
+<script src="js/script.js" type="module" async></script>
 ```
 
 That first synchronously-loaded `polyfill.js` is the hack I made last time:
@@ -1830,20 +1829,6 @@ figure out how to
 
 [pjsdocs]: https://polkadot.js.org/docs/
 
-
-TODO
-
-
-```
-    const api = await polkadot.ApiPromise.create({
-        provider,
-        types: {
-            "Address": "AccountId",
-            "LookupSource": "AccountId",
-        }
-    });
-```
-
 I run into problems with calling contracts,
 and it turns out that
 my "//Bob" address is wrong &mdash; when I print it,
@@ -1852,7 +1837,7 @@ It was because I wasn't specifying a "sr25519" keyring.
 I thought "sr25519" was the default but I had to specify it as
 
 ```JavaScript
-        keyring = new polkadot.Keyring({ type: "sr25519" });
+keyring = new polkadot.Keyring({ type: "sr25519" });
 ```
 
 The [keyring docs][krdcs] say to use `ss58Format: 2`,
@@ -1872,9 +1857,13 @@ how to use the polkadot.js APIs I just gave up,
 and continued guessing and searching through substrate GitHub
 issues until I stumbled on the answers I needed.
 
+Note that since this was written,
+canvas-node has been upgraded
+to a more recent substrate.
 
 
-## Final UI touches
+
+## We fail to complete the prototype
 
 
 
