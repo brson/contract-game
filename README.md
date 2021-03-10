@@ -61,8 +61,6 @@ that runs on the [canvas] substrate network.
 
 [canvas]: https://github.com/paritytech/canvas-node
 
-It is fronted by a gamified web UI.
-
 TODO
 
 
