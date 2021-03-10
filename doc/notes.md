@@ -22,6 +22,10 @@ contract implementation with Ink,
 client implementation with [polkadot.js],
 and some concluding thoughts.
 
+A lot of this post is tedious details,
+but I've tried to summarize some of the useful bits in
+the ["learnings and tips"][lat] section near the end.
+
 This project began on 2021/01/01,
 and continued in small bursts through 2021/03/01.
 Along the way we changed the exact revisions of the software
@@ -31,10 +35,10 @@ we were using several times.
 [subblog]: https://brson.github.io/2020/12/03/substrate-and-ink-part-1
 [`ink!`]: https://github.com/paritytech/ink
 [polkadot.js]: https://github.com/polkadot-js
+[lat]: #user-contract-learnings-and-tips
 
 - [Our project](#user-content-our-project)
 - [Terminology](#user-content-terminology)
-- [Summary](#user-content-summary)
 - [Implementing the contract](#user-content-implementing-the-contract)
   - [Debugging, etc.](#user-content-debugging-etc)
   - [Debugging cross-contract calls](#user-content-debugging-cross-contract-calls)
@@ -120,12 +124,6 @@ of disambiguating these concepts:
 "player level contract account ID"?
 Yeek.
 Maybe I'm overthinking this.
-
-
-
-## Summary
-
-TODO
 
 
 
@@ -1234,12 +1232,10 @@ so that when a player succeeds at level 0,
 they get access to level 1,
 etc.
 
+I'll not show the logic inline here,
+but [it's on GitHub][run_level].
 
-
-TODO
-
-
-
+[run_level]: https://github.com/brson/contract-game/blob/c73b3378206bb41d93c9cc1786a63f94240e7753/src/game/lib.rs#L158
 
 Since we managed to get `CallBuilder` working,
 we continue to have no problems with it,
@@ -1252,7 +1248,8 @@ so that we can figure out what happened.
 This won't be as crucial once we are exercising the contract via our own UI,
 and our UI can interpret our own error return values.
 
-TODO
+At this point we have completed the essential contract
+features of our prototype.
 
 
 
@@ -1334,6 +1331,21 @@ and I am skeptical that they reasonably capture the behavior of
 the system running live.
 I am sure unit tests will be useful the more software I write,
 and as ink matures.
+
+There are a number of `cfg` attributes and features
+that an ink contract seemingly needs to maintain in order
+to establish the difference between the normal on-chain
+runtime environment, where there is no standard library;
+and the unit-testing environment,
+which does have access to the standard library.
+So far these attributes,
+`std`, and `ink-as-dependency`,
+are just magic to us and we copy-and-paste
+them from examples without understanding.
+
+I have an inclination to just delete them all
+and always assume the code is running on-chain,
+forget about unit testing.
 
 I am more interested in integration testing on a dev chain,
 and intend to instead write scripts that run a chain,
@@ -1901,12 +1913,16 @@ are more immediately satisfying.
 
 ## Learnings and Tips
 
-- The ink learning curve is steep &mdash;
-  expect for the first few weeks to be tough
 - Substrate is in rapid development,
   and you will need to be committed to keep up with
   its changes. Beyond my own experience, I have
   heard this mentioned by many substrate developers.
+- Logs from `debug_println` only appear if you run
+  `canvas-node` with `-lruntime=debug`.
+- Run `canvas-node --dev --tmp -lerror,runtime=debug`.
+  The `-lerror,runtime=debug` reduces spew by setting
+  the default log level to "error", and also emits
+  logs from `debug_println`.
 - The [polkadot explorer][pex] can connect to your devnet.
   Click on the "Polkadot" dropdown menu in the top left,
   then the "development" dropdown;
@@ -1915,15 +1931,15 @@ are more immediately satisfying.
 - In aggregate, the various tools involved in ink development
   seem to break pretty often. It's not clear if its best to
   try to keep up with the master branches of these projects or not.
-- There is almost no debuggabality for ink contracts.
+- There is little debuggabality for ink contracts.
   Use `debug_println` everywhere.
 - At least some substrate errors (`scale::Error`),
   within the wasm contract sandbox,
   do not carry dynamic metadata that would be useful to help interpret them,
   and that is available when compiled outside of wasm.
-- put logging in every error branch
-  - canvas-ui won't interpret errors returned during normal execution
-- `canvas-node --dev --tmp -lerror,runtime=debug`
+- `canvas-ui` often won't interpret errors returned during normal
+  execution. Put logging in every error branch to understand what is
+  going on inside the contract.
 - Install the [subkey command][subkeycommand].
 - With `CallBuilder`, just set `gas_limit` to 0 during development:
   it will use as much gas as needed,
@@ -1987,9 +2003,9 @@ but combining them is brutal.
 
 And before much longer smart contract programmers are going
 to need to understend zero-knowledge cryptography too.
-TODO
 
-TODO mention tokenomics?
+I haven't even mentioned tokenomics,
+but that's anothing thing you've got to understand.
 
 How can this complexity ever be reduced to something an average programmer can
 manage? The blockchain ecosystem just seems to be exploding in complexity.
@@ -2001,7 +2017,7 @@ of the extremely many slightly-different models of permissionless
 distributed programming evolving all over the industry.
 
 
-This is all without even addressing the horrifically
+This is all without even addressing the embarassingly
 immature state of developer tooling in blockchain ecosystems.
 It will be a decade before the smart contract programming experience,
 on any chain,
@@ -2011,7 +2027,7 @@ nor reason to bother dedicating those resources.
 With blockchain programming having such an incredibly
 small developer audience, given the limited application domains,
 and the extreme expertise necessary to participate,
-the momentum isn't there to sustain the TODO
+the momentum isn't there to sustain an advanced developer ecosystem.
 
 The blockchain world appears to be filled with developer tooling
 projects that fulfill their grant's contractual requirements,
@@ -2020,7 +2036,7 @@ and then stop evolving.
 It's an entire universe of 90% solutions.
 
 
-### It's ok - I'm learning
+### At least I'm learning
 
 My partner is learning to program right now,
 and I am patiently watching her go through all the difficulties
@@ -2044,39 +2060,4 @@ I am going to continue trying though,
 and hoping for a moment of enlightenment,
 where it all feels right,
 and where the fun begins.
-
-
-## TODO
-
-- tips
-  - installing tools
-    - canvas-node
-    - cargo-contract
-    - canvas-ui
-    - subkey
-- docs.rs!
-- uploading and running contracts via web ui sucks
-
-Since last hacking on canvas,
-I've installed the polkadot.js extension to Brave.
-Now when I navigate to canvas-ui,
-I get asked by the extension to approve the UI,
-and whether I do or don't,
-I can't connect to the local devnet.
-
-- Live contract already exists error
-  doesn't tell us the account ID of that contract,
-  so we can't recover it.
-- Describe our workflow for testing our contract.
-
-I am pretty confident I am not dumb,
-that I am a "good" programmer,
-especially in Rust.
-
-That I have run into _so many_ problems
-_just getting started_ is _a bad sign_.
-
-
-
-(**)
 
